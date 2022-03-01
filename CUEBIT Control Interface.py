@@ -402,10 +402,12 @@ class EBIT:
         self.tabControl.pack(expand=1, fill='both')
         #self.tabControl.place(relx=0.5, rely=0, anchor=N)
 
+
+    #Creates the Cathode Controls in a frame that is placed at the coordinates (x, y)
     def cathode_controls(self, x, y):    
         self.cathode = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.cathode.place(relx = x, rely = y, anchor = CENTER)
-
+ 
         #Canvas for creating divider line between potential and current controls
         w = Canvas(self.cathode, width=390, height=2, bg='grey90', highlightthickness=0)
         w.create_line(0, 1, 390, 1)
@@ -452,10 +454,12 @@ class EBIT:
         I_heat_label3 = Label(self.cathode, text='= ', font=font_14, bg = 'grey90', fg = 'black')
         I_heat_label3.place(relx=0.28, rely=0.87, anchor=E)
 
-        I_heat_entry = Entry(self.cathode, font=font_14, justify=RIGHT)
-        I_heat_entry.place(relx=0.29, rely=0.87, anchor=W, width=70)
+        self.I_heat_entry = Entry(self.cathode, font=font_14, justify=RIGHT)
+        self.I_heat_entry.insert(0,str(self.I_heat))
+        self.I_heat_entry.place(relx=0.29, rely=0.87, anchor=W, width=70)
         I_heat_label4 = Label(self.cathode, text='A', font=font_14, bg = 'grey90', fg = 'black')
         I_heat_label4.place(relx=0.49, rely=0.87, anchor=CENTER)
+        #self.I_heat_entry.bind("<Return>", lambda eff: self.update_I_heat())
 
         I_heat_actual = Label(self.cathode, text=f'{round(self.I_heat,2)} A', font=font_14, bg='grey90', fg='black')
         I_heat_actual.place(relx=0.72, rely=0.87, anchor=E)
@@ -464,7 +468,7 @@ class EBIT:
         U_filament.place(relx=0.98, rely=0.87, anchor=E)
 
         
-
+    #Creates the Anode Controls in a frame that is placed at the coordinates (x, y)
     def anode_controls(self, x, y):
         self.anode = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.anode.place(relx = x, rely = y, anchor = CENTER)
@@ -535,68 +539,97 @@ class EBIT:
         self.anode_ani = animation.FuncAnimation(self.anode_fig, self.animate, interval = 500)
 
 
+    #Creates the Drift Tube Controls in a frame that is placed at the coordinates (x, y)
     def drift_tube_controls(self, x, y):
-        self.dt = Frame(self.service_tab, width = 400, height = 300, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
+        self.dt = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.dt.place(relx = x, rely = y, anchor = CENTER)
 
         dtLabel = Label(self.dt, text = 'Drift Tubes', font = font_18, bg = 'grey90', fg = 'black')
         dtLabel.place(relx=0.5, rely=0.1, anchor = CENTER)
 
         self.dt_power = Button(self.dt, image=self.power_button, command=lambda: self.click_button(self.dt_power), borderwidth=0, bg='grey90', activebackground='grey90')
-        self.dt_power.place(relx=0.1, rely=0.25, anchor=CENTER)
+        self.dt_power.place(relx=0.1, rely=0.2, anchor=CENTER)
 
+        #Canvas for creating divider line between pulse-timer and drift tube potentials
+        w = Canvas(self.dt, width=390, height=2, bg='grey90', highlightthickness=0)
+        w.create_line(0, 1, 390, 1)
+        w.place(relx=0.5,rely=0.35,anchor=CENTER)
+
+
+        #Drift Tube Potentials
         U_0_label1 = Label(self.dt, text='U', font=font_14, bg = 'grey90', fg = 'black')
-        U_0_label1.place(relx=0.1, rely=0.49, anchor=CENTER)
+        U_0_label1.place(relx=0.1, rely=0.45, anchor=CENTER)
         #Creates subscript "0" because Tkinter is stupid and doesn't support rich text in Labels
-        U_0_label2 = Label(self.dt, text='0', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
-        U_0_label2.place(relx=0.115, rely=0.52, anchor=W)
+        U_0_label2 = Label(self.dt, text='0', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=1)
+        U_0_label2.place(relx=0.115, rely=0.48, anchor=W)
 
         U_0_label3 = Label(self.dt, text='= ', font=font_14, bg = 'grey90', fg = 'black')
-        U_0_label3.place(relx=0.24, rely=0.49, anchor=E)
+        U_0_label3.place(relx=0.225, rely=0.45, anchor=E)
 
         self.U_0_entry = Entry(self.dt, font=font_14, justify=RIGHT)
-        self.U_0_entry.place(relx=0.24, rely=0.49, anchor=W, width=70)
+        self.U_0_entry.place(relx=0.24, rely=0.45, anchor=W, width=70)
         self.U_0_entry.insert(0,str(self.U_0))
-        self.U_0_entry.bind("<Return>", lambda eff: self.update_U_0())
+        #self.U_0_entry.bind("<Return>", lambda eff: self.update_U_0())
 
 
 
         U_0_label4 = Label(self.dt, text='V', font=font_14, bg = 'grey90', fg = 'black')
-        U_0_label4.place(relx=0.44, rely=0.49, anchor=CENTER)
+        U_0_label4.place(relx=0.44, rely=0.45, anchor=CENTER)
 
         U_A_label1 = Label(self.dt, text='U', font=font_14, bg = 'grey90', fg = 'black')
-        U_A_label1.place(relx=0.1, rely=0.67, anchor=CENTER)
+        U_A_label1.place(relx=0.1, rely=0.6, anchor=CENTER)
         #Creates subscript "A" because Tkinter is stupid and doesn't support rich text in Labels
-        U_A_label2 = Label(self.dt, text='A', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
-        U_A_label2.place(relx=0.115, rely=0.7, anchor=W)
+        U_A_label2 = Label(self.dt, text='A', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=1)
+        U_A_label2.place(relx=0.115, rely=0.63, anchor=W)
 
-        U_A_label3 = Label(self.dt, text='= ', font=font_14, bg = 'grey90', fg = 'black')
-        U_A_label3.place(relx=0.24, rely=0.67, anchor=E)
+        U_A_label3 = Label(self.dt, text='= -', font=font_14, bg = 'grey90', fg = 'black')
+        U_A_label3.place(relx=0.24, rely=0.6, anchor=E)
 
         self.U_A_entry = Entry(self.dt, font=font_14, justify=RIGHT)
-        self.U_A_entry.place(relx=0.24, rely=0.67, anchor=W, width=70)
+        self.U_A_entry.place(relx=0.24, rely=0.6, anchor=W, width=70)
         self.U_A_entry.insert(0,str(self.U_A))
-        self.U_A_entry.bind("<Return>", lambda eff: self.update_U_A())
+        #self.U_A_entry.bind("<Return>", lambda eff: self.update_U_A())
 
         U_A_label4 = Label(self.dt, text='V', font=font_14, bg = 'grey90', fg = 'black')
-        U_A_label4.place(relx=0.44, rely=0.67, anchor=CENTER)
+        U_A_label4.place(relx=0.44, rely=0.6, anchor=CENTER)
 
         
 
-        I_an_label1 = Label(self.dt, text='I', font=font_14, bg = 'grey90', fg = 'black')
-        I_an_label1.place(relx=0.105, rely=0.85, anchor=CENTER)
-        #Creates subscript "An" because Tkinter is stupid and doesn't support rich text in Labels
-        I_an_label2 = Label(self.dt, text='An', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
-        I_an_label2.place(relx=0.115, rely=0.88, anchor=W)
+        U_B1_label1 = Label(self.dt, text='U', font=font_14, bg = 'grey90', fg = 'black')
+        U_B1_label1.place(relx=0.105, rely=0.75, anchor=CENTER)
+        #Creates subscript "B1" because Tkinter is stupid and doesn't support rich text in Labels
+        U_B1_label2 = Label(self.dt, text='B1', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
+        U_B1_label2.place(relx=0.12, rely=0.78, anchor=W)
 
-        I_an_label3 = Label(self.dt, text='= ', font=font_14, bg = 'grey90', fg = 'black')
-        I_an_label3.place(relx=0.24, rely=0.85, anchor=E)
+        U_B1_label3 = Label(self.dt, text='= -', font=font_14, bg = 'grey90', fg = 'black')
+        U_B1_label3.place(relx=0.24, rely=0.75, anchor=E)
 
-        I_an_label4 = Label(self.dt, text=f'{round(self.I_an,0)}', font=font_14, bg='grey90', fg='black')
-        I_an_label4.place(relx=0.395, rely=0.85, anchor=E)
+        self.U_B1_entry = Entry(self.dt, font=font_14, justify=RIGHT)
+        self.U_B1_entry.place(relx=0.24, rely=0.75, anchor=W, width=70)
+        self.U_B1_entry.insert(0,str(self.U_B1))
+        #self.U_B1_entry.bind("<Return>", lambda eff: self.update_U_B1())
 
-        I_an_label5 = Label(self.dt, text='μA', font=font_14, bg = 'grey90', fg = 'black')
-        I_an_label5.place(relx=0.43, rely=0.85, anchor=CENTER)
+        U_B1_label5 = Label(self.dt, text='V', font=font_14, bg = 'grey90', fg = 'black')
+        U_B1_label5.place(relx=0.44, rely=0.75, anchor=CENTER)
+
+
+
+        U_B2_label1 = Label(self.dt, text='U', font=font_14, bg = 'grey90', fg = 'black')
+        U_B2_label1.place(relx=0.105, rely=0.9, anchor=CENTER)
+        #Creates subscript "B2" because Tkinter is stupid and doesn't support rich text in Labels
+        U_B2_label2 = Label(self.dt, text='B2', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
+        U_B2_label2.place(relx=0.12, rely=0.93, anchor=W)
+
+        U_B2_label3 = Label(self.dt, text='= -', font=font_14, bg = 'grey90', fg = 'black')
+        U_B2_label3.place(relx=0.24, rely=0.9, anchor=E)
+
+        self.U_B2_entry = Entry(self.dt, font=font_14, justify=RIGHT)
+        self.U_B2_entry.place(relx=0.24, rely=0.9, anchor=W, width=70)
+        self.U_B2_entry.insert(0,str(self.U_B2))
+        #self.U_B1_entry.bind("<Return>", lambda eff: self.update_U_B2())
+
+        U_B2_label5 = Label(self.dt, text='V', font=font_14, bg = 'grey90', fg = 'black')
+        U_B2_label5.place(relx=0.44, rely=0.9, anchor=CENTER)
 
     def makeGui(self, root=None):
         if root == None:
@@ -628,6 +661,7 @@ class EBIT:
         self.createMenus(menu)
         self.createTabs()
         self.cathode_controls(0.12, 0.12)
+        self.drift_tube_controls(0.12, 0.35)
         '''
         self.cathode_controls(0.12, 0.35)
         self.cathode_controls(0.12, 0.58)
