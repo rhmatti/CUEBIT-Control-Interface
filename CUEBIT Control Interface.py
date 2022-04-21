@@ -22,6 +22,10 @@ from tkinter import ttk
 from tkinter import filedialog
 from PIL import ImageTk, Image
 
+#Import SQL Tools
+import mysql.connector
+from mysql.connector import Error
+
 #Import Math Tools
 import matplotlib
 matplotlib.use('TkAgg')
@@ -74,13 +78,58 @@ def multiThreading(function):
     t1.setDaemon(True)      #This is so the thread will terminate when the main program is terminated
     t1.start()
 
+#Establishes a connection to the SQL database file
+def create_server_connection(host_name, user_name, user_password, db_name):
+    connection = None
+    try:
+        connection = mysql.connector.connect(
+            host=host_name,
+            user=user_name,
+            passwd=user_password,
+            database=db_name
+        )
+        print("MySQL Database connection successful")
+    except Error as err:
+        print(f"Error: '{err}'")
+
+    return connection
+
+#Executes commands on the SQL database file
+def execute_query(connection, query):
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+        connection.commit()
+        print("Query successful")
+    except Error as err:
+        print(f"Error: '{err}'")
+
+#Reads data from the SQL database file
+def read_query(connection, query):
+    cursor = connection.cursor()
+    result = None
+    try:
+        cursor.execute(query)
+        result = cursor.fetchall()
+        connection.commit()
+        return result
+    except Error as err:
+        print(f"Error: '{err}'")
+
+#Initializes the program
 def startProgram(root=None):
     instance = EBIT()
     instance.makeGui(root)
 
-
+#This is the EBIT class object, which contains everything related to the GUI control interface
 class EBIT:
     def __init__(self):
+        #Establishes connection to SQL Server
+        query_format = f'''
+        SELECT name FROM test_data;
+        '''
+        self.connection = create_server_connection("localhost", "cuebit", "cuebit", "data")
+        print(read_query(self.connection, query_format))
 
         #Defines global variables
         self.canvas = None
@@ -924,7 +973,7 @@ class EBIT:
         try:
             image = Image.open('images/power-button.png')
         except:
-            image = Image.open('C:/Users/rickm/Documents/GitHub/EBIT Control Interface/images/power-button.png')
+            image = Image.open('C:/Users/cuebit-control/Downloads/CUEBIT-Control-Interface-main/images/power-button.png')
         image = image.resize((30,32), Image.ANTIALIAS)
         self.power_button = ImageTk.PhotoImage(image)
 
