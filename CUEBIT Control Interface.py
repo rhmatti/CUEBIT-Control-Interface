@@ -221,6 +221,7 @@ class EBIT:
 
         #Other Buttons
         self.U_EL1_q = False
+        self.U_EL2_q = False
 
 
 
@@ -390,6 +391,10 @@ class EBIT:
                 text.config(text = '= -')
             else:
                 button.config(bg='#50E24B', text='negative', command=lambda: self.declick_button(button, type, variable), activebackground='#50E24B')
+            if variable == 'U_EL1_charge':
+                self.U_EL1_set = -self.U_EL1_set
+            elif variable == 'U_EL2_charge':
+                self.U_EL2_set = -self.U_EL2_set
 
 
     def declick_button(self, button, type, variable, text=None):
@@ -408,6 +413,10 @@ class EBIT:
                 text.config(text = '=  ')
             else:
                 button.config(bg='#1AA5F6', text='positive', command=lambda: self.click_button(button, type, variable), activebackground='#1AA5F6')
+            if variable == 'U_EL1_charge':
+                self.U_EL1_set = -self.U_EL1_set
+            elif variable == 'U_EL2_charge':
+                self.U_EL2_set = -self.U_EL2_set
 
     def update_button_var(self, variable, value):
         if variable == 'U_cat':
@@ -431,6 +440,9 @@ class EBIT:
         elif variable == 'U_EL1_charge':
             self.U_EL1_q = value
             print(self.U_EL1_q)
+        elif variable == 'U_EL2_charge':
+            self.U_EL2_q = value
+            print(self.U_EL2_q)
         elif variable == 'U_EL2':
             self.U_EL2_power = value
             print(self.U_EL2_power)
@@ -451,6 +463,7 @@ class EBIT:
                 self.time_array.pop(0)
             self.anode_array.append(self.U_an)
             self.time_array.append(time.time()-t0)
+
 
             if self.U_cat != self.U_cat_set and self.U_cat_set >= 0 and self.U_cat_power:
                 if self.U_cat < self.U_cat_set:
@@ -475,6 +488,7 @@ class EBIT:
                 self.U_cat = 0
                 self.U_cat_actual.config(text=f'{int(round(self.U_cat,0))}')
 
+
             if self.U_an != self.U_an_set and self.anode_power == True:
                 if self.U_an < self.U_an_set:
                     if abs(self.U_an-self.U_an_set) > 200:
@@ -491,6 +505,7 @@ class EBIT:
                 self.U_an = 0
                 self.U_an_actual_label4.config(text=f'{int(round(self.U_an,0))}')
 
+
             if self.I_heat != self.I_heat_set and self.I_heat_power:
                 self.I_heat = self.I_heat_set
                 self.I_heat_actual.config(text="{:.2f}".format(self.I_heat) + ' A')
@@ -498,6 +513,7 @@ class EBIT:
             elif not self.I_heat_power and self.I_heat != 0:
                 self.I_heat = 0
                 self.I_heat_actual.config(text=f'{int(round(self.I_heat,0))}')
+
 
             if self.dt_power == True:
                 print('oyorf')
@@ -516,6 +532,7 @@ class EBIT:
                     self.U_A = 0
                     self.U_A_actual.config(text=f'{int(round(self.U_A,0))} V')
 
+
             if self.U_ext != self.U_ext_set and self.U_ext_power == True:
                 self.U_ext = self.U_ext_set
                 if self.U_ext > 0:
@@ -532,50 +549,80 @@ class EBIT:
             elif not self.U_ext_power and self.U_ext != 0:
                 self.U_ext = 0
                 self.U_ext_actual.config(text=f'{int(round(self.U_ext,0))} V')
-            '''
-            if self.U_EL1_q:
-                U_EL1_temp = -self.U_EL1_set
-            else:
-                U_EL1_temp = self.U_EL1_set
-            print(U_EL1_temp)
-            '''
-            if self.U_EL1 != self.U_EL1_set and self.U_EL1_power:
-                if self.U_EL1_set < 0:
-                    self.U_EL1_set = self.U_EL1
-                    helpMessage ='Please enter a positive value'
-                    messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                    messageVar.config(bg='firebrick1')
-                    messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                    self.lens.after(5000, messageVar.destroy)
+            
+
+            if self.U_EL1 != self.U_EL1_set and self.U_EL1_power == True:
+                if self.U_EL1_q == False:
+                    if self.U_EL1_set < 0:
+                        self.U_EL1_set = self.U_EL1
+                        helpMessage ='Please enter a positive value'
+                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                        messageVar.config(bg='firebrick1')
+                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                        self.lens.after(5000, messageVar.destroy)
+
+                    elif self.U_EL1_set == 0:
+                        self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
                     
-                elif self.U_EL1 == 0:
-                    self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+                    else:
+                        self.U_EL1 = self.U_EL1_set
+                        self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
 
-                elif self.U_EL1_q:
-                    self.U_EL1 = self.U_EL1_set
-                    self.U_EL1_actual.config(text=f'-{int(round(self.U_EL1,0))} V')
+                elif self.U_EL1_q == True:
+                    if self.U_EL1_set > 0:
+                        self.U_EL1_set = self.U_EL1
+                        helpMessage ='Please enter a positive value'
+                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                        messageVar.config(bg='firebrick1')
+                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                        self.lens.after(5000, messageVar.destroy)
 
-                elif not self.U_EL1_q:
-                    self.U_EL1 = self.U_EL1_set
-                    self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+                    elif self.U_EL1_set == 0:
+                        self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+
+                    else:
+                        self.U_EL1 = self.U_EL1_set
+                        self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+
 
             elif not self.U_EL1_power and self.U_EL1 != 0:
                 self.U_EL1 = 0
                 self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
 
+
             if self.U_EL2 != self.U_EL2_set and self.U_EL2_power == True:
-                self.U_EL2 = self.U_EL2_set
-                if self.U_EL2 > 0:
-                    self.U_EL2_actual.config(text=f'-{int(round(self.U_EL2,0))} V')
-                elif self.U_EL2 == 0:
-                    self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
-                elif self.U_EL2_set < 0:
-                    self.U_EL2_set = self.U_EL2
-                    helpMessage ='Please enter a positive value'
-                    messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                    messageVar.config(bg='firebrick1')
-                    messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                    self.lens.after(5000, messageVar.destroy)
+                if self.U_EL2_q == False:
+                    if self.U_EL2_set < 0:
+                        self.U_EL2_set = self.U_EL2
+                        helpMessage ='Please enter a positive value'
+                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                        messageVar.config(bg='firebrick1')
+                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                        self.lens.after(5000, messageVar.destroy)
+
+                    elif self.U_EL2_set == 0:
+                        self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
+                    
+                    else:
+                        self.U_EL2 = self.U_EL2_set
+                        self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
+
+                elif self.U_EL2_q == True:
+                    if self.U_EL2_set > 0:
+                        self.U_EL2_set = self.U_EL2
+                        helpMessage ='Please enter a positive value'
+                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                        messageVar.config(bg='firebrick1')
+                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                        self.lens.after(5000, messageVar.destroy)
+
+                    elif self.U_EL2_set == 0:
+                        self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
+
+                    else:
+                        self.U_EL2 = self.U_EL2_set
+                        self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
+
             elif not self.U_EL2_power and self.U_EL2 != 0:
                 self.U_EL2 = 0
                 self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
