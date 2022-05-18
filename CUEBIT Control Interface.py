@@ -78,6 +78,7 @@ def multiThreading(function):
     t1.setDaemon(True)      #This is so the thread will terminate when the main program is terminated
     t1.start()
 
+'''
 #Establishes a connection to the SQL database file
 def create_server_connection(host_name, user_name, user_password, db_name):
     connection = None
@@ -115,6 +116,7 @@ def read_query(connection, query):
         return result
     except Error as err:
         print(f"Error: '{err}'")
+'''
 
 #Initializes the program
 def startProgram(root=None):
@@ -128,8 +130,8 @@ class EBIT:
         query_format = f'''
         SELECT name FROM test_data;
         '''
-        self.connection = create_server_connection("localhost", "cuebit", "cuebit", "data")
-        print(read_query(self.connection, query_format))
+        #self.connection = create_server_connection("localhost", "cuebit", "cuebit", "data")
+        #print(read_query(self.connection, query_format))
 
         #Defines global variables
         self.canvas = None
@@ -181,6 +183,7 @@ class EBIT:
         self.U_EL1 = None
         self.U_EL1_set = None
         self.U_EL2 = None
+        self.U_EL2_set = None
 
         #Deflector Variables
         self.U_DefX1 = None
@@ -209,10 +212,15 @@ class EBIT:
         self.EMO = None
 
         #Power Buttons
-        self.dt_button = False
-        self.U_ext_button = False
-        self.U_EL1_button = False
-        self.U_EL2_button = False
+        self.U_cat_power = False
+        self.I_heat_power = False
+        self.dt_power = False
+        self.U_ext_power = False
+        self.U_EL1_power = False
+        self.U_EL2_power = False
+
+        #Other Buttons
+        self.U_EL1_q = False
 
 
 
@@ -272,6 +280,7 @@ class EBIT:
             self.U_EL1 = 0
             self.U_EL1_set = 0
             self.U_EL2 = 0
+            self.U_EL2_set = 0
 
             #Deflector Variables
             self.U_DefX1 = 0
@@ -401,16 +410,30 @@ class EBIT:
                 button.config(bg='#1AA5F6', text='positive', command=lambda: self.click_button(button, type, variable), activebackground='#1AA5F6')
 
     def update_button_var(self, variable, value):
-        if variable == 'dt_power':
-            self.dt_button = value
-            print(self.dt_button)
+        if variable == 'U_cat':
+            self.U_cat_power = value
+            print(self.U_cat_power)
+        elif variable == 'I_heat':
+            self.I_heat_power = value
+            print(self.I_heat_power)
+        elif variable == 'dt_power':
+            self.dt_power = value
+            print(self.dt_power)
+        elif variable == 'anode_power':
+            self.anode_power = value
+            print(self.anode_power)
         elif variable == 'U_ext':
-            self.U_ext_button = value
+            self.U_ext_power = value
+            print(self.U_ext_power)
         elif variable == 'U_EL1':
-            self.U_EL1_button = value
+            self.U_EL1_power = value
+            print(self.U_EL1_power)
+        elif variable == 'U_EL1_charge':
+            self.U_EL1_q = value
+            print(self.U_EL1_q)
         elif variable == 'U_EL2':
-            self.U_EL2_button = value
-            print(self.U_EL2_button)
+            self.U_EL2_power = value
+            print(self.U_EL2_power)
 
     def animate(self, i):
         self.anode_ax.clear()
@@ -429,7 +452,7 @@ class EBIT:
             self.anode_array.append(self.U_an)
             self.time_array.append(time.time()-t0)
 
-            if self.U_cat != self.U_cat_set and self.U_cat_set >= 0:
+            if self.U_cat != self.U_cat_set and self.U_cat_set >= 0 and self.U_cat_power:
                 if self.U_cat < self.U_cat_set:
                     if abs(self.U_cat-self.U_cat_set) > 200:
                         self.U_cat = self.U_cat + 200
@@ -448,8 +471,11 @@ class EBIT:
                 messageVar.config(bg='firebrick1')
                 messageVar.place(relx = 0.5, rely = 0.25, anchor = CENTER)
                 self.cathode.after(5000, messageVar.destroy)
+            elif not self.U_cat_power and self.U_cat != 0:
+                self.U_cat = 0
+                self.U_cat_actual.config(text=f'{int(round(self.U_cat,0))}')
 
-            if self.U_an != self.U_an_set:
+            if self.U_an != self.U_an_set and self.anode_power == True:
                 if self.U_an < self.U_an_set:
                     if abs(self.U_an-self.U_an_set) > 200:
                         self.U_an = self.U_an + 200
@@ -461,20 +487,36 @@ class EBIT:
                     else:
                         self.U_an = self.U_an_set
                 self.U_an_actual_label4.config(text = f'{int(round(self.U_an,0))}')
+            elif self.anode_power == False and self.U_an != 0:
+                self.U_an = 0
+                self.U_an_actual_label4.config(text=f'{int(round(self.U_an,0))}')
 
-            if self.I_heat != self.I_heat_set:
+            if self.I_heat != self.I_heat_set and self.I_heat_power:
                 self.I_heat = self.I_heat_set
                 self.I_heat_actual.config(text="{:.2f}".format(self.I_heat) + ' A')
-
-            if self.U_0 != self.U_0_set:
-                self.U_0 = self.U_0_set
-                self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
             
-            if self.U_A != self.U_A_set:
-                self.U_A = self.U_A_set
-                self.U_A_actual.config(text="-{:.1f} V".format(self.U_A))
+            elif not self.I_heat_power and self.I_heat != 0:
+                self.I_heat = 0
+                self.I_heat_actual.config(text=f'{int(round(self.I_heat,0))}')
 
-            if self.U_ext != self.U_ext_set and self.U_ext_button:
+            if self.dt_power == True:
+                print('oyorf')
+                if self.U_0 != self.U_0_set:
+                    self.U_0 = self.U_0_set
+                    self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
+                if self.U_A != self.U_A_set:
+                    self.U_A = self.U_A_set
+                    self.U_A_actual.config(text="-{:.1f} V".format(self.U_A))
+
+            elif self.dt_power == False:
+                if self.U_0 != 0:
+                    self.U_0 = 0
+                    self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
+                if self.U_A != 0:
+                    self.U_A = 0
+                    self.U_A_actual.config(text=f'{int(round(self.U_A,0))} V')
+
+            if self.U_ext != self.U_ext_set and self.U_ext_power == True:
                 self.U_ext = self.U_ext_set
                 if self.U_ext > 0:
                     self.U_ext_actual.config(text=f'-{int(round(self.U_ext,0))} V')
@@ -487,23 +529,56 @@ class EBIT:
                     messageVar.config(bg='firebrick1')
                     messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
                     self.lens.after(5000, messageVar.destroy)
-            elif not self.U_ext_button and self.U_ext != 0:
+            elif not self.U_ext_power and self.U_ext != 0:
                 self.U_ext = 0
                 self.U_ext_actual.config(text=f'{int(round(self.U_ext,0))} V')
-
-            if self.U_EL1 != self.U_EL1_set and self.U_EL1_button:
-                self.U_EL1 = self.U_EL1_set
-                if self.U_EL1 > 0:
-                    self.U_EL1_actual.config(text=f'-{int(round(self.U_EL1,0))} V')
-                elif self.U_EL1 == 0:
-                    self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
-                elif self.U_EL1_set < 0:
+            '''
+            if self.U_EL1_q:
+                U_EL1_temp = -self.U_EL1_set
+            else:
+                U_EL1_temp = self.U_EL1_set
+            print(U_EL1_temp)
+            '''
+            if self.U_EL1 != self.U_EL1_set and self.U_EL1_power:
+                if self.U_EL1_set < 0:
                     self.U_EL1_set = self.U_EL1
                     helpMessage ='Please enter a positive value'
                     messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
                     messageVar.config(bg='firebrick1')
                     messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
                     self.lens.after(5000, messageVar.destroy)
+                    
+                elif self.U_EL1 == 0:
+                    self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+
+                elif self.U_EL1_q:
+                    self.U_EL1 = self.U_EL1_set
+                    self.U_EL1_actual.config(text=f'-{int(round(self.U_EL1,0))} V')
+
+                elif not self.U_EL1_q:
+                    self.U_EL1 = self.U_EL1_set
+                    self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+
+            elif not self.U_EL1_power and self.U_EL1 != 0:
+                self.U_EL1 = 0
+                self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+
+            if self.U_EL2 != self.U_EL2_set and self.U_EL2_power == True:
+                self.U_EL2 = self.U_EL2_set
+                if self.U_EL2 > 0:
+                    self.U_EL2_actual.config(text=f'-{int(round(self.U_EL2,0))} V')
+                elif self.U_EL2 == 0:
+                    self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
+                elif self.U_EL2_set < 0:
+                    self.U_EL2_set = self.U_EL2
+                    helpMessage ='Please enter a positive value'
+                    messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                    messageVar.config(bg='firebrick1')
+                    messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                    self.lens.after(5000, messageVar.destroy)
+            elif not self.U_EL2_power and self.U_EL2 != 0:
+                self.U_EL2 = 0
+                self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
 
 
             self.I_dt_label.config(text=f'{int(round(self.I_dt,0))} μA')
@@ -552,6 +627,12 @@ class EBIT:
         self.U_EL1_entry.delete(0, END)
         self.U_EL1_entry.insert(0, int(round(self.U_EL1_set,0)))
         print('U_EL1 set')
+
+    def update_U_EL2(self):
+        self.U_EL2_set = float(self.U_EL2_entry.get())
+        self.U_EL2_entry.delete(0, END)
+        self.U_EL2_entry.insert(0, int(round(self.U_EL2_set,0)))
+        print('U_EL2 set')
 
 
     
@@ -605,8 +686,8 @@ class EBIT:
         cathodeLabel = Label(self.cathode, text = 'Cathode', font = font_18, bg = 'grey90', fg = 'black')
         cathodeLabel.place(relx=0.5, rely=0.1, anchor = CENTER)
 
-        self.U_cat_power = Button(self.cathode, image=self.power_button, command=lambda: self.click_button(self.U_cat_power, 'power'), borderwidth=0, bg='grey90', activebackground='grey90')
-        self.U_cat_power.place(relx=0.1, rely=0.25, anchor=CENTER)
+        self.U_cat_button = Button(self.cathode, image=self.power_button, command=lambda: self.click_button(self.U_cat_button, 'power', 'U_cat'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.U_cat_button.place(relx=0.1, rely=0.25, anchor=CENTER)
 
         U_cat_label1 = Label(self.cathode, text='U', font=font_14, bg = 'grey90', fg = 'black')
         U_cat_label1.place(relx=0.15, rely=0.42, anchor=CENTER)
@@ -631,8 +712,8 @@ class EBIT:
         I_cat = Label(self.cathode, text=f'{round(self.I_cat,1)} mA', font=font_14, bg='grey90', fg='black')
         I_cat.place(relx=0.98, rely=0.42, anchor=E)
 
-        self.I_heat_power = Button(self.cathode, image=self.power_button, command=lambda: self.click_button(self.I_heat_power, 'power'), borderwidth=0, bg='grey90', activebackground='grey90')
-        self.I_heat_power.place(relx=0.1, rely=0.7, anchor=CENTER)
+        self.I_heat_button = Button(self.cathode, image=self.power_button, command=lambda: self.click_button(self.I_heat_button, 'power', 'I_heat'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.I_heat_button.place(relx=0.1, rely=0.7, anchor=CENTER)
 
         I_heat_label1 = Label(self.cathode, text='I', font=font_14, bg = 'grey90', fg = 'black')
         I_heat_label1.place(relx=0.155, rely=0.87, anchor=CENTER)
@@ -665,7 +746,7 @@ class EBIT:
         anodeLabel = Label(self.anode, text = 'Anode', font = font_18, bg = 'grey90', fg = 'black')
         anodeLabel.place(relx=0.3, rely=0.1, anchor = CENTER)
 
-        self.anode_power = Button(self.anode, image=self.power_button, command=lambda: self.click_button(self.anode_power, 'power'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.anode_power = Button(self.anode, image=self.power_button, command=lambda: self.click_button(self.anode_power, 'power', 'anode_power'), borderwidth=0, bg='grey90', activebackground='grey90')
         self.anode_power.place(relx=0.1, rely=0.25, anchor=CENTER)
 
         U_an_label1 = Label(self.anode, text='U', font=font_14, bg = 'grey90', fg = 'black')
@@ -736,8 +817,8 @@ class EBIT:
         dtLabel = Label(self.dt, text = 'Drift Tubes', font = font_18, bg = 'grey90', fg = 'black')
         dtLabel.place(relx=0.5, rely=0.1, anchor = CENTER)
 
-        self.dt_power = Button(self.dt, image=self.power_button, command=lambda: self.click_button(self.dt_power, 'power', 'dt_power'), borderwidth=0, bg='grey90', activebackground='grey90')
-        self.dt_power.place(relx=0.1, rely=0.2, anchor=CENTER)
+        self.dt_button = Button(self.dt, image=self.power_button, command=lambda: self.click_button(self.dt_button, 'power', 'dt_power'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.dt_button.place(relx=0.1, rely=0.2, anchor=CENTER)
 
         self.dt_timer_button = Button(self.dt, text='Timer OFF', relief = 'raised', command=lambda: self.click_button(self.dt_timer_button, 'timer'), width=8, borderwidth=1, bg='#1AA5F6', activebackground='#1AA5F6')
         self.dt_timer_button.place(relx=0.25, rely=0.25, anchor=CENTER)
@@ -868,7 +949,7 @@ class EBIT:
         self.U_B_actual = Label(self.dt, text="-{:.1f} V".format(self.U_B), font=font_14, bg = 'grey90', fg = 'black')
         self.U_B_actual.place(relx=0.98, rely=0.825, anchor=E)
 
-    
+    #Creates the Lens Controls in a frame that is placed at the coordinates (x,y)
     def lens_controls(self, x, y):
         self.lens = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.lens.place(relx = x, rely = y, anchor = CENTER)
@@ -876,8 +957,8 @@ class EBIT:
         anodeLabel = Label(self.lens, text = 'Lens', font = font_18, bg = 'grey90', fg = 'black')
         anodeLabel.place(relx=0.5, rely=0.1, anchor = CENTER)
 
-        self.U_ext_power = Button(self.lens, image=self.power_button, command=lambda: self.click_button(self.U_ext_power, 'power', 'U_ext'), borderwidth=0, bg='grey90', activebackground='grey90')
-        self.U_ext_power.place(relx=0.1, rely=0.35, anchor=CENTER)
+        self.U_ext_button = Button(self.lens, image=self.power_button, command=lambda: self.click_button(self.U_ext_button, 'power', 'U_ext'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.U_ext_button.place(relx=0.1, rely=0.35, anchor=CENTER)
 
         U_ext_label1 = Label(self.lens, text='U', font=font_14, bg = 'grey90', fg = 'black')
         U_ext_label1.place(relx=0.35, rely=0.35, anchor=CENTER)
@@ -900,11 +981,11 @@ class EBIT:
         self.U_ext_actual.place(relx=0.98, rely=0.35, anchor=E)
 
 
-        self.U_EL1_power = Button(self.lens, image=self.power_button, command=lambda: self.click_button(self.U_EL1_power, 'power', 'U_EL1'), borderwidth=0, bg='grey90', activebackground='grey90')
-        self.U_EL1_power.place(relx=0.1, rely=0.6, anchor=CENTER)
+        self.U_EL1_button = Button(self.lens, image=self.power_button, command=lambda: self.click_button(self.U_EL1_button, 'power', 'U_EL1'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.U_EL1_button.place(relx=0.1, rely=0.6, anchor=CENTER)
 
-        self.U_EL1_button = Button(self.lens, text='positive', relief = 'raised', command=lambda: self.click_button(self.U_EL1_button, 'charge', self.U_EL1_label3), width=6, borderwidth=1, bg='#1AA5F6', activebackground='#1AA5F6')
-        self.U_EL1_button.place(relx=0.25, rely=0.6, anchor=CENTER)
+        self.U_EL1_charge = Button(self.lens, text='positive', relief = 'raised', command=lambda: self.click_button(self.U_EL1_charge, 'charge', 'U_EL1_charge', self.U_EL1_label3), width=6, borderwidth=1, bg='#1AA5F6', activebackground='#1AA5F6')
+        self.U_EL1_charge.place(relx=0.25, rely=0.6, anchor=CENTER)
 
         U_EL1_label1 = Label(self.lens, text='U', font=font_14, bg = 'grey90', fg = 'black')
         U_EL1_label1.place(relx=0.35, rely=0.6, anchor=CENTER)
@@ -927,11 +1008,11 @@ class EBIT:
         self.U_EL1_actual.place(relx=0.98, rely=0.6, anchor=E)
 
 
-        self.U_EL2_power = Button(self.lens, image=self.power_button, command=lambda: self.click_button(self.U_EL2_power, 'power'), borderwidth=0, bg='grey90', activebackground='grey90')
-        self.U_EL2_power.place(relx=0.1, rely=0.85, anchor=CENTER)
+        self.U_EL2_button = Button(self.lens, image=self.power_button, command=lambda: self.click_button(self.U_EL2_button, 'power', 'U_EL2'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.U_EL2_button.place(relx=0.1, rely=0.85, anchor=CENTER)
 
-        self.U_EL2_button = Button(self.lens, text='positive', relief = 'raised', command=lambda: self.click_button(self.U_EL2_button, 'charge', self.U_EL2_label3), width=6, borderwidth=1, bg='#1AA5F6', activebackground='#1AA5F6')
-        self.U_EL2_button.place(relx=0.25, rely=0.85, anchor=CENTER)
+        self.U_EL2_charge = Button(self.lens, text='positive', relief = 'raised', command=lambda: self.click_button(self.U_EL2_charge, 'charge', 'U_EL2_charge', self.U_EL2_label3), width=6, borderwidth=1, bg='#1AA5F6', activebackground='#1AA5F6')
+        self.U_EL2_charge.place(relx=0.25, rely=0.85, anchor=CENTER)
 
         U_EL2_label1 = Label(self.lens, text='U', font=font_14, bg = 'grey90', fg = 'black')
         U_EL2_label1.place(relx=0.35, rely=0.85, anchor=CENTER)
@@ -945,10 +1026,13 @@ class EBIT:
         self.U_EL2_entry = Entry(self.lens, font=font_14, justify=RIGHT)
         self.U_EL2_entry.place(relx=0.49, rely=0.85, anchor=W, width=70)
         self.U_EL2_entry.insert(0,str(self.U_EL2))
-        self.U_EL2_entry.bind("<Return>", lambda eff: self.update_U_an())
+        self.U_EL2_entry.bind("<Return>", lambda eff: self.update_U_EL2())
 
         U_EL2_label4 = Label(self.lens, text='V', font=font_14, bg = 'grey90', fg = 'black')
         U_EL2_label4.place(relx=0.69, rely=0.85, anchor=CENTER)
+
+        self.U_EL2_actual = Label(self.lens, text=f'{round(self.U_EL2,0)} V', font=font_14, bg='grey90', fg='black')
+        self.U_EL2_actual.place(relx=0.98, rely=0.85, anchor=E)
 
     def makeGui(self, root=None):
         if root == None:
