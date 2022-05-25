@@ -1,6 +1,6 @@
 #CUEBIT Control Interface
 #Author: Richard Mattish
-#Last Updated: 02/24/2022
+#Last Updated: 05/25/2022
 
 
 #Function:  This program provides a graphical user interface for controlling
@@ -23,8 +23,9 @@ from tkinter import filedialog
 from PIL import ImageTk, Image
 
 #Import SQL Tools
-import mysql.connector
-from mysql.connector import Error
+import sql
+#import mysql.connector
+#from mysql.connector import Error
 
 #Import Math Tools
 import matplotlib
@@ -78,46 +79,6 @@ def multiThreading(function):
     t1.setDaemon(True)      #This is so the thread will terminate when the main program is terminated
     t1.start()
 
-'''
-#Establishes a connection to the SQL database file
-def create_server_connection(host_name, user_name, user_password, db_name):
-    connection = None
-    try:
-        connection = mysql.connector.connect(
-            host=host_name,
-            user=user_name,
-            passwd=user_password,
-            database=db_name
-        )
-        print("MySQL Database connection successful")
-    except Error as err:
-        print(f"Error: '{err}'")
-
-    return connection
-
-#Executes commands on the SQL database file
-def execute_query(connection, query):
-    cursor = connection.cursor()
-    try:
-        cursor.execute(query)
-        connection.commit()
-        print("Query successful")
-    except Error as err:
-        print(f"Error: '{err}'")
-
-#Reads data from the SQL database file
-def read_query(connection, query):
-    cursor = connection.cursor()
-    result = None
-    try:
-        cursor.execute(query)
-        result = cursor.fetchall()
-        connection.commit()
-        return result
-    except Error as err:
-        print(f"Error: '{err}'")
-'''
-
 #Initializes the program
 def startProgram(root=None):
     instance = EBIT()
@@ -132,6 +93,10 @@ class EBIT:
         '''
         #self.connection = create_server_connection("localhost", "cuebit", "cuebit", "data")
         #print(read_query(self.connection, query_format))
+        try:
+            self.connection = sql.create_server_connection("130.127.189.200", "cuebit", "cuebit", "data")
+        except:
+            print('Error: Could not establish connection to SQL server')
 
         #Defines global variables
         self.canvas = None
@@ -214,6 +179,7 @@ class EBIT:
         #Power Buttons
         self.U_cat_power = False
         self.I_heat_power = False
+        self.anode_power = False
         self.dt_power = False
         self.U_ext_power = False
         self.U_EL1_power = False
@@ -222,11 +188,6 @@ class EBIT:
         #Other Buttons
         self.U_EL1_q = False
         self.U_EL2_q = False
-
-
-
-
-
 
 
         
@@ -453,7 +414,158 @@ class EBIT:
         ydata = self.anode_array
         self.anode_ax.plot(xdata,ydata)
         #self.anode_ax.set_ylabel('Potential (V)')
-        self.anode_ax.set_ylim(0,10000)
+        self.anode_ax.set_ylim(0,12000)
+
+    def data_updater(self):
+        t0 = time.time()
+        while True:
+            #Read Cathode variable values from sql server
+            self.U_cat = sql.get_value(self.connection, 'hv_rack_values', 'CATHODE_V_R')
+            self.U_cat_actual.config(text=f'{int(round(self.U_cat,0))} V')
+
+            self.I_cat = sql.get_value(self.connection, 'hv_rack_values', 'CATHODE_I_Emiss')
+            self.I_cat_label.config(text=f'{round(self.I_cat,1)} mA')
+
+            #Read Anode variable values from sql server
+            self.U_an = sql.get_value(self.connection, 'hv_rack_values', 'Anode_V_R')
+            self.U_an_actual_label4.config(text = f'{int(round(self.U_an,0))}')
+
+            self.I_an = sql.get_value(self.connection, 'hv_rack_values', 'Anode_I_R')
+            self.I_an_label4.config(text=f'{round(self.I_an,0)}')
+
+            if len(self.anode_array) > 10:
+                self.anode_array.pop(0)
+                self.time_array.pop(0)
+            self.anode_array.append(self.U_an)
+            self.time_array.append(time.time()-t0)
+
+            #Read Drfit Tube variable values from sql server
+            self.U_0 = sql.get_value(self.connection, 'hv_rack_values', 'U_0_R')
+            self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
+
+            self.U_A = sql.get_value(self.connection, 'hv_rack_values', 'U_A_R')
+            self.U_A_actual.config(text="-{:.1f} V".format(self.U_A))
+
+            self.U_B = sql.get_value(self.connection, 'hv_rack_values', 'U_B_R')
+            self.U_B_actual.config(text="-{:.1f} V".format(self.U_B))
+
+            self.I_dt_label.config(text=f'{int(round(self.I_dt,0))} μA')
+            
+
+            #Read Lens variable values from sql server
+            self.U_ext = sql.get_value(self.connection, 'hv_rack_values', 'EXT_R')
+            if self.U_ext > 0:
+                self.U_ext_actual.config(text=f'-{int(round(self.U_ext,0))} V')
+            elif self.U_ext == 0:
+                self.U_ext_actual.config(text=f'{int(round(self.U_ext,0))} V')
+
+            self.U_EL1 = sql.get_value(self.connection, 'hv_rack_values', 'EL1_R')
+            if self.U_EL1_q == False:
+                self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+            elif self.U_EL1_q == True:
+                self.U_EL1_actual.config(text=f'-{int(round(self.U_EL1,0))} V')
+
+            self.U_EL2 = sql.get_value(self.connection, 'hv_rack_values', 'EL2_R')
+            if self.U_EL2_q == False:
+                self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
+            elif self.U_EL2_q == True:
+                self.U_EL2_actual.config(text=f'-{int(round(self.U_EL2,0))} V')
+
+
+
+            #Write Cathode variable values to sql server
+            if self.U_cat != self.U_cat_set and self.U_cat_set >= 0:
+                sql.send_value(self.connection, 'hv_rack_values', 'CATHODE_V_W', self.U_cat_set)
+            elif self.U_cat_set < 0:
+                self.U_cat_set = self.U_cat
+                helpMessage ='Please enter a positive value'
+                messageVar = Message(self.cathode, text = helpMessage, font = font_12, width = 600) 
+                messageVar.config(bg='firebrick1')
+                messageVar.place(relx = 0.5, rely = 0.25, anchor = CENTER)
+                self.cathode.after(5000, messageVar.destroy)
+
+            if self.I_heat != self.I_heat_set and self.I_heat_power:
+                self.I_heat = self.I_heat_set
+                self.I_heat_actual.config(text="{:.2f}".format(self.I_heat) + ' A')
+            
+            elif not self.I_heat_power and self.I_heat != 0:
+                self.I_heat = 0
+                self.I_heat_actual.config(text=f'{int(round(self.I_heat,0))}')
+
+            #Write Anode variable values to sql server
+            if self.U_an != self.U_an_set:
+                sql.send_value(self.connection, 'hv_rack_values', 'Anode_V_W', self.U_an_set)
+
+            #Write Drift Tube variable values to sql server
+            if self.U_0 != self.U_0_set:
+                sql.send_value(self.connection, 'hv_rack_values', 'U_0_W', self.U_0_set)
+            if self.U_A != self.U_A_set:
+                sql.send_value(self.connection, 'hv_rack_values', 'U_A_W', self.U_A_set)
+                
+
+            #Write Lens variable values to sql server
+            if self.U_ext != self.U_ext_set:
+                if self.U_ext_set < 0:
+                    self.U_ext_set = self.U_ext
+                    helpMessage ='Please enter a positive value'
+                    messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                    messageVar.config(bg='firebrick1')
+                    messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                    self.lens.after(5000, messageVar.destroy)
+                else:
+                    sql.send_value(self.connection, 'hv_rack_values', 'EXT_W', self.U_ext_set)
+
+            if self.U_EL1 != self.U_EL1_set:
+                if self.U_EL1_q == False:
+                    if self.U_EL1_set < 0:
+                        self.U_EL1_set = self.U_EL1
+                        helpMessage ='Please enter a positive value'
+                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                        messageVar.config(bg='firebrick1')
+                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                        self.lens.after(5000, messageVar.destroy)
+                    else:
+                        sql.send_value(self.connection, 'hv_rack_values', 'EL1_W', self.U_EL1_set)
+
+                elif self.U_EL1_q == True:
+                    if self.U_EL1_set > 0:
+                        self.U_EL1_set = self.U_EL1
+                        helpMessage ='Please enter a positive value'
+                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                        messageVar.config(bg='firebrick1')
+                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                        self.lens.after(5000, messageVar.destroy)
+                    else:
+                        sql.send_value(self.connection, 'hv_rack_values', 'EL1_W', -self.U_EL1_set)
+
+            
+            if self.U_EL2 != self.U_EL2_set:
+                if self.U_EL2_q == False:
+                    if self.U_EL2_set < 0:
+                        self.U_EL2_set = self.U_EL2
+                        helpMessage ='Please enter a positive value'
+                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                        messageVar.config(bg='firebrick1')
+                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                        self.lens.after(5000, messageVar.destroy)
+                    else:
+                        sql.send_value(self.connection, 'hv_rack_values', 'EL2_W', self.U_EL2_set)
+
+                elif self.U_EL2_q == True:
+                    if self.U_EL2_set > 0:
+                        self.U_EL2_set = self.U_EL2
+                        helpMessage ='Please enter a positive value'
+                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+                        messageVar.config(bg='firebrick1')
+                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
+                        self.lens.after(5000, messageVar.destroy)
+                    else:
+                        sql.send_value(self.connection, 'hv_rack_values', 'EL2_W', -self.U_EL2_set)
+
+
+            time.sleep(0.1)
+                
+
 
     def practice_data_updater(self):
         t0 = time.time()
@@ -463,7 +575,6 @@ class EBIT:
                 self.time_array.pop(0)
             self.anode_array.append(self.U_an)
             self.time_array.append(time.time()-t0)
-
 
             if self.U_cat != self.U_cat_set and self.U_cat_set >= 0 and self.U_cat_power:
                 if self.U_cat < self.U_cat_set:
@@ -487,7 +598,7 @@ class EBIT:
             elif not self.U_cat_power and self.U_cat != 0:
                 self.U_cat = 0
                 self.U_cat_actual.config(text=f'{int(round(self.U_cat,0))}')
-
+            
 
             if self.U_an != self.U_an_set and self.anode_power == True:
                 if self.U_an < self.U_an_set:
@@ -504,8 +615,7 @@ class EBIT:
             elif self.anode_power == False and self.U_an != 0:
                 self.U_an = 0
                 self.U_an_actual_label4.config(text=f'{int(round(self.U_an,0))}')
-
-
+            
             if self.I_heat != self.I_heat_set and self.I_heat_power:
                 self.I_heat = self.I_heat_set
                 self.I_heat_actual.config(text="{:.2f}".format(self.I_heat) + ' A')
@@ -514,9 +624,7 @@ class EBIT:
                 self.I_heat = 0
                 self.I_heat_actual.config(text=f'{int(round(self.I_heat,0))}')
 
-
             if self.dt_power == True:
-                print('oyorf')
                 if self.U_0 != self.U_0_set:
                     self.U_0 = self.U_0_set
                     self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
@@ -550,7 +658,7 @@ class EBIT:
                 self.U_ext = 0
                 self.U_ext_actual.config(text=f'{int(round(self.U_ext,0))} V')
             
-
+            
             if self.U_EL1 != self.U_EL1_set and self.U_EL1_power == True:
                 if self.U_EL1_q == False:
                     if self.U_EL1_set < 0:
@@ -566,6 +674,7 @@ class EBIT:
                     
                     else:
                         self.U_EL1 = self.U_EL1_set
+
                         self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
 
                 elif self.U_EL1_q == True:
@@ -756,8 +865,8 @@ class EBIT:
         self.U_cat_actual = Label(self.cathode, text=f'-{round(self.U_cat,0)} V', font=font_14, bg='grey90', fg='black')
         self.U_cat_actual.place(relx=0.72, rely=0.42, anchor=E)
 
-        I_cat = Label(self.cathode, text=f'{round(self.I_cat,1)} mA', font=font_14, bg='grey90', fg='black')
-        I_cat.place(relx=0.98, rely=0.42, anchor=E)
+        self.I_cat_label = Label(self.cathode, text=f'{round(self.I_cat,1)} mA', font=font_14, bg='grey90', fg='black')
+        self.I_cat_label.place(relx=0.98, rely=0.42, anchor=E)
 
         self.I_heat_button = Button(self.cathode, image=self.power_button, command=lambda: self.click_button(self.I_heat_button, 'power', 'I_heat'), borderwidth=0, bg='grey90', activebackground='grey90')
         self.I_heat_button.place(relx=0.1, rely=0.7, anchor=CENTER)
@@ -793,8 +902,8 @@ class EBIT:
         anodeLabel = Label(self.anode, text = 'Anode', font = font_18, bg = 'grey90', fg = 'black')
         anodeLabel.place(relx=0.3, rely=0.1, anchor = CENTER)
 
-        self.anode_power = Button(self.anode, image=self.power_button, command=lambda: self.click_button(self.anode_power, 'power', 'anode_power'), borderwidth=0, bg='grey90', activebackground='grey90')
-        self.anode_power.place(relx=0.1, rely=0.25, anchor=CENTER)
+        self.anode_button = Button(self.anode, image=self.power_button, command=lambda: self.click_button(self.anode_button, 'power', 'anode_power'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.anode_button.place(relx=0.1, rely=0.25, anchor=CENTER)
 
         U_an_label1 = Label(self.anode, text='U', font=font_14, bg = 'grey90', fg = 'black')
         U_an_label1.place(relx=0.1, rely=0.49, anchor=CENTER)
@@ -837,8 +946,8 @@ class EBIT:
         I_an_label3 = Label(self.anode, text='= ', font=font_14, bg = 'grey90', fg = 'black')
         I_an_label3.place(relx=0.24, rely=0.85, anchor=E)
 
-        I_an_label4 = Label(self.anode, text=f'{round(self.I_an,0)}', font=font_14, bg='grey90', fg='black')
-        I_an_label4.place(relx=0.395, rely=0.85, anchor=E)
+        self.I_an_label4 = Label(self.anode, text=f'{round(self.I_an,0)}', font=font_14, bg='grey90', fg='black')
+        self.I_an_label4.place(relx=0.395, rely=0.85, anchor=E)
 
         I_an_label5 = Label(self.anode, text='μA', font=font_14, bg = 'grey90', fg = 'black')
         I_an_label5.place(relx=0.43, rely=0.85, anchor=CENTER)
@@ -1120,7 +1229,8 @@ class EBIT:
         self.anode_controls(0.35, 0.12)
         self.lens_controls(0.35, 0.35)
 
-        multiThreading(self.practice_data_updater)
+        #multiThreading(self.practice_data_updater)
+        multiThreading(self.data_updater)
         self.root.mainloop()
 
 

@@ -23,8 +23,10 @@ def execute_query(connection, query):
         cursor.execute(query)
         connection.commit()
         #print("Query successful")
+        return True
     except Error as err:
         print(f"Query Error: '{err}'")
+        return False
         
 def read_query(connection, query):
     try:
@@ -61,18 +63,34 @@ if __name__ == "__main__":
     
     
     query_format = f'''
-    SELECT value FROM hv_rack_values WHERE name = "CATHODE_V_R";
+    SELECT value FROM hv_rack_values WHERE name = "CATHODE_I_Emiss";
+    '''
+    query_format2 = f'''
+    SELECT * FROM hv_rack_values;
     '''
     connection = create_server_connection("130.127.189.200", "cuebit", "cuebit", "data")
     
     while True:
+        query = f'''
+        UPDATE hv_rack_values
+        SET value = 0
+        WHERE name = 'CATHODE_V_R';
+        '''
         # connection = create_server_connection("localhost", "root", "cuebit", "data")
-        print(read_query(connection, query_format)[0][0])
+        #print(read_query(connection, query_format)[0][0])
+        print(read_query(connection, query_format2))
         time.sleep(1)
 
-def get_value(table, value):
-    query_format = f'''
-    SELECT value FROM {table} WHERE name = "{value}";
+def get_value(connection, table, variable):
+    query = f'''
+    SELECT value FROM {table} WHERE name = "{variable}";
     '''
-    connection = create_server_connection("130.127.189.200", "cuebit", "cuebit", "data")
-    return read_query(connection, query_format)[0][0]
+    return read_query(connection, query)[0][0]
+
+def send_value(connection, table, variable, value):
+    query = f'''
+    UPDATE {table}
+    SET value = {value}
+    WHERE name = '{variable}';
+    '''
+    return execute_query(connection, query)
