@@ -151,13 +151,21 @@ class EBIT:
         self.U_EL2_set = None
 
         #Deflector Variables
-        self.U_DefX1 = None
-        self.U_DefY1 = None
-        self.U_DefX2 = None
-        self.U_DefY2 = None
+        self.U_X1_A = None
+        self.U_X1_B = None
+        self.U_X1_set = None
+        self.U_Y1_A = None
+        self.U_Y1_B = None
+        self.U_Y1_set = None
+        self.U_X2_A = None
+        self.U_X2_B = None
+        self.U_X2_set = None
+        self.U_Y2_A = None
+        self.U_Y2_B = None
+        self.U_Y2_set = None
 
         #Gas Valve Variables
-        self.Gas_Valve = None
+        self.P_Valve = None
 
         #Deceleration Variables
         self.U_DL1 = None
@@ -189,8 +197,31 @@ class EBIT:
         self.U_EL1_q = False
         self.U_EL2_q = False
 
+        '''
+        try:
+            #Read Cathode variable values from sql server
+            self.U_cat = sql.get_value(self.connection, 'hv_rack_values', 'CATHODE_V_R')
+            self.I_cat = sql.get_value(self.connection, 'hv_rack_values', 'CATHODE_I_Emiss')
 
-        
+            #Read Anode variable values from sql server
+            self.U_an = sql.get_value(self.connection, 'hv_rack_values', 'Anode_V_R')
+            self.I_an = sql.get_value(self.connection, 'hv_rack_values', 'Anode_I_R')
+
+            #Read Drfit Tube variable values from sql server
+            self.U_0 = sql.get_value(self.connection, 'hv_rack_values', 'U_0_R')
+            self.U_A = sql.get_value(self.connection, 'hv_rack_values', 'U_A_R')
+            self.U_B = sql.get_value(self.connection, 'hv_rack_values', 'U_B_R')
+
+            #Read Lens variable values from sql server
+            self.U_ext = sql.get_value(self.connection, 'hv_rack_values', 'EXT_R')
+            self.U_EL1 = sql.get_value(self.connection, 'hv_rack_values', 'EL1_R')
+            self.U_EL2 = sql.get_value(self.connection, 'hv_rack_values', 'EL2_R')
+
+            #Read Deflector variable values from sql server
+            self.U_X1_A = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_A')
+            self.U_X1_B = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_B')
+            '''
+
         #Currently initializes variables just for testing purposes. Later, we will read in the actual values in the try block above
         if True:
             #Defines global variables
@@ -245,10 +276,18 @@ class EBIT:
             self.U_EL2_set = 0
 
             #Deflector Variables
-            self.U_DefX1 = 0
-            self.U_DefY1 = 0
-            self.U_DefX2 = 0
-            self.U_DefY2 = 0
+            self.U_X1_set = 0
+            self.U_X1_A = 0
+            self.U_X1_B = 0
+            self.U_Y1_set = 0
+            self.U_Y1_A = 0
+            self.U_Y1_B = 0
+            self.U_X2_set = 0
+            self.U_X2_A = 0
+            self.U_X2_B = 0
+            self.U_Y2_set = 0
+            self.U_Y2_A = 0
+            self.U_Y2_B = 0
 
             #Gas Valve Variables
             self.Gas_Valve = 0
@@ -471,6 +510,27 @@ class EBIT:
             elif self.U_EL2_q == True:
                 self.U_EL2_actual.config(text=f'-{int(round(self.U_EL2,0))} V')
 
+            #Read Deflector variable values from sql server
+            self.U_X1_A = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_A')
+            self.U_X1_A_actual.config(text=f'{round(float(self.U_X1_A),1)} V')
+            self.U_X1_B = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_B')
+            self.U_X1_B_actual.config(text=f'{round(float(self.U_X1_B),1)} V')
+
+            self.U_Y1_A = sql.get_value(self.connection, 'hv_rack_values', 'Y1_R_A')
+            self.U_Y1_A_actual.config(text=f'{round(float(self.U_Y1_A),1)} V')
+            self.U_Y1_B = sql.get_value(self.connection, 'hv_rack_values', 'Y1_R_B')
+            self.U_Y1_B_actual.config(text=f'{round(float(self.U_Y1_B),1)} V')
+
+            self.U_X2_A = sql.get_value(self.connection, 'hv_rack_values', 'X2_R_A')
+            self.U_X2_A_actual.config(text=f'{round(float(self.U_X2_A),1)} V')
+            self.U_X2_B = sql.get_value(self.connection, 'hv_rack_values', 'X2_R_B')
+            self.U_X2_B_actual.config(text=f'{round(float(self.U_X2_B),1)} V')
+
+            self.U_Y2_A = sql.get_value(self.connection, 'hv_rack_values', 'Y2_R_A')
+            self.U_Y2_A_actual.config(text=f'{round(float(self.U_Y2_A),1)} V')
+            self.U_Y2_B = sql.get_value(self.connection, 'hv_rack_values', 'Y2_R_B')
+            self.U_Y2_B_actual.config(text=f'{round(float(self.U_Y2_B),1)} V')
+
 
 
             #Write Cathode variable values to sql server
@@ -561,6 +621,17 @@ class EBIT:
                         self.lens.after(5000, messageVar.destroy)
                     else:
                         sql.send_value(self.connection, 'hv_rack_values', 'EL2_W', -self.U_EL2_set)
+
+            #Write Deflector variable values to sql server
+            if self.U_X1_A != self.U_X1_set:
+                sql.send_value(self.connection, 'hv_rack_values', 'X1_W', self.U_X1_set)
+            if self.U_Y1_A != self.U_Y1_set:
+                sql.send_value(self.connection, 'hv_rack_values', 'Y1_W', self.U_Y1_set)
+            if self.U_X2_A != self.U_X2_set:
+                sql.send_value(self.connection, 'hv_rack_values', 'X2_W', self.U_X2_set)
+            if self.U_Y2_A != self.U_Y2_set:
+                sql.send_value(self.connection, 'hv_rack_values', 'Y2_W', self.U_Y2_set)
+
 
 
             time.sleep(0.1)
@@ -789,6 +860,26 @@ class EBIT:
         self.U_EL2_entry.delete(0, END)
         self.U_EL2_entry.insert(0, int(round(self.U_EL2_set,0)))
         print('U_EL2 set')
+    
+    def update_U_X1(self):
+        self.U_X1_set = float(self.U_X1_entry.get())
+        self.U_X1_entry.delete(0, END)
+        self.U_X1_entry.insert(0, round(self.U_X1_set,1))
+
+    def update_U_Y1(self):
+        self.U_Y1_set = float(self.U_Y1_entry.get())
+        self.U_Y1_entry.delete(0, END)
+        self.U_Y1_entry.insert(0, round(self.U_Y1_set,1))
+
+    def update_U_X2(self):
+        self.U_X2_set = float(self.U_X2_entry.get())
+        self.U_X2_entry.delete(0, END)
+        self.U_X2_entry.insert(0, round(self.U_X2_set,1))
+
+    def update_U_Y2(self):
+        self.U_Y2_set = float(self.U_Y2_entry.get())
+        self.U_Y2_entry.delete(0, END)
+        self.U_Y2_entry.insert(0, round(self.U_Y2_set,1))
 
 
     
@@ -1110,8 +1201,8 @@ class EBIT:
         self.lens = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.lens.place(relx = x, rely = y, anchor = CENTER)
 
-        anodeLabel = Label(self.lens, text = 'Lens', font = font_18, bg = 'grey90', fg = 'black')
-        anodeLabel.place(relx=0.5, rely=0.1, anchor = CENTER)
+        lensLabel = Label(self.lens, text = 'Lens', font = font_18, bg = 'grey90', fg = 'black')
+        lensLabel.place(relx=0.5, rely=0.1, anchor = CENTER)
 
         self.U_ext_button = Button(self.lens, image=self.power_button, command=lambda: self.click_button(self.U_ext_button, 'power', 'U_ext'), borderwidth=0, bg='grey90', activebackground='grey90')
         self.U_ext_button.place(relx=0.1, rely=0.35, anchor=CENTER)
@@ -1190,6 +1281,199 @@ class EBIT:
         self.U_EL2_actual = Label(self.lens, text=f'{round(self.U_EL2,0)} V', font=font_14, bg='grey90', fg='black')
         self.U_EL2_actual.place(relx=0.98, rely=0.85, anchor=E)
 
+
+    def deflector_controls(self, x, y):
+        self.deflector = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
+        self.deflector.place(relx = x, rely = y, anchor = CENTER)
+
+        deflectorLabel = Label(self.deflector, text = 'Deflectors', font = font_18, bg = 'grey90', fg = 'black')
+        deflectorLabel.place(relx=0.35, rely=0.1, anchor = CENTER)
+
+        ALabel = Label(self.deflector, text = 'A:', font = font_14, bg = 'grey90', fg = 'black')
+        ALabel.place(relx=0.67, rely=0.15, anchor = CENTER)
+
+        BLabel = Label(self.deflector, text = 'B:', font = font_14, bg = 'grey90', fg = 'black')
+        BLabel.place(relx=0.9, rely=0.15, anchor = CENTER)
+
+        self.U_X1_button = Button(self.deflector, image=self.power_button, command=lambda: self.click_button(self.U_X1_button, 'power', 'U_X1'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.U_X1_button.place(relx=0.1, rely=0.3, anchor=CENTER)
+
+        U_X1_label1 = Label(self.deflector, text='U', font=font_14, bg = 'grey90', fg = 'black')
+        U_X1_label1.place(relx=0.2, rely=0.3, anchor=CENTER)
+        #Creates subscript "ext" because Tkinter is stupid and doesn't support rich text in Labels
+        U_X1_label2 = Label(self.deflector, text='X1', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=3)
+        U_X1_label2.place(relx=0.215, rely=0.33, anchor=W)
+
+        U_X1_label3 = Label(self.deflector, text='= ', font=font_14, bg = 'grey90', fg = 'black')
+        U_X1_label3.place(relx=0.32, rely=0.3, anchor=E)
+
+        self.U_X1_entry = Entry(self.deflector, font=font_14, justify=RIGHT)
+        self.U_X1_entry.place(relx=0.32, rely=0.3, anchor=W, width=60)
+        self.U_X1_entry.insert(0, round(float(self.U_X1_A),1))
+        self.U_X1_entry.bind("<Return>", lambda eff: self.update_U_X1())
+
+        U_X1_label4 = Label(self.deflector, text='V', font=font_14, bg = 'grey90', fg = 'black')
+        U_X1_label4.place(relx=0.49, rely=0.3, anchor=CENTER)
+
+        self.U_X1_A_actual = Label(self.deflector, text=f'{round(float(self.U_X1_A),1)} V', font=font_14, bg='grey90', fg='black')
+        self.U_X1_A_actual.place(relx=0.75, rely=0.3, anchor=E)
+
+        self.U_X1_B_actual = Label(self.deflector, text=f'{round(float(self.U_X1_B),1)} V', font=font_14, bg='grey90', fg='black')
+        self.U_X1_B_actual.place(relx=0.98, rely=0.3, anchor=E)
+
+
+        self.U_Y1_button = Button(self.deflector, image=self.power_button, command=lambda: self.click_button(self.U_Y1_button, 'power', 'U_Y1'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.U_Y1_button.place(relx=0.1, rely=0.5, anchor=CENTER)
+
+        U_Y1_label1 = Label(self.deflector, text='U', font=font_14, bg = 'grey90', fg = 'black')
+        U_Y1_label1.place(relx=0.2, rely=0.5, anchor=CENTER)
+        #Creates subscript "ext" because Tkinter is stupid and doesn't support rich text in Labels
+        U_Y1_label2 = Label(self.deflector, text='Y1', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=3)
+        U_Y1_label2.place(relx=0.215, rely=0.53, anchor=W)
+
+        U_Y1_label3 = Label(self.deflector, text='= ', font=font_14, bg = 'grey90', fg = 'black')
+        U_Y1_label3.place(relx=0.32, rely=0.5, anchor=E)
+
+        self.U_Y1_entry = Entry(self.deflector, font=font_14, justify=RIGHT)
+        self.U_Y1_entry.place(relx=0.32, rely=0.5, anchor=W, width=60)
+        self.U_Y1_entry.insert(0, round(float(self.U_Y1_A),1))
+        self.U_Y1_entry.bind("<Return>", lambda eff: self.update_U_Y1())
+
+        U_Y1_label4 = Label(self.deflector, text='V', font=font_14, bg = 'grey90', fg = 'black')
+        U_Y1_label4.place(relx=0.49, rely=0.5, anchor=CENTER)
+
+        self.U_Y1_A_actual = Label(self.deflector, text=f'{round(float(self.U_Y1_A),1)} V', font=font_14, bg='grey90', fg='black')
+        self.U_Y1_A_actual.place(relx=0.75, rely=0.5, anchor=E)
+
+        self.U_Y1_B_actual = Label(self.deflector, text=f'{round(float(self.U_Y1_B),1)} V', font=font_14, bg='grey90', fg='black')
+        self.U_Y1_B_actual.place(relx=0.98, rely=0.5, anchor=E)
+
+
+        self.U_X2_button = Button(self.deflector, image=self.power_button, command=lambda: self.click_button(self.U_X2_button, 'power', 'U_X2'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.U_X2_button.place(relx=0.1, rely=0.7, anchor=CENTER)
+
+        U_X2_label1 = Label(self.deflector, text='U', font=font_14, bg = 'grey90', fg = 'black')
+        U_X2_label1.place(relx=0.2, rely=0.7, anchor=CENTER)
+        #Creates subscript "ext" because Tkinter is stupid and doesn't support rich text in Labels
+        U_X2_label2 = Label(self.deflector, text='X2', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=3)
+        U_X2_label2.place(relx=0.215, rely=0.73, anchor=W)
+
+        U_X2_label3 = Label(self.deflector, text='= ', font=font_14, bg = 'grey90', fg = 'black')
+        U_X2_label3.place(relx=0.32, rely=0.7, anchor=E)
+
+        self.U_X2_entry = Entry(self.deflector, font=font_14, justify=RIGHT)
+        self.U_X2_entry.place(relx=0.32, rely=0.7, anchor=W, width=60)
+        self.U_X2_entry.insert(0, round(float(self.U_X2_A),1))
+        self.U_X2_entry.bind("<Return>", lambda eff: self.update_U_X2())
+
+        U_X2_label4 = Label(self.deflector, text='V', font=font_14, bg = 'grey90', fg = 'black')
+        U_X2_label4.place(relx=0.49, rely=0.7, anchor=CENTER)
+
+        self.U_X2_A_actual = Label(self.deflector, text=f'{round(float(self.U_X2_A),1)} V', font=font_14, bg='grey90', fg='black')
+        self.U_X2_A_actual.place(relx=0.75, rely=0.7, anchor=E)
+
+        self.U_X2_B_actual = Label(self.deflector, text=f'{round(float(self.U_X2_B),1)} V', font=font_14, bg='grey90', fg='black')
+        self.U_X2_B_actual.place(relx=0.98, rely=0.7, anchor=E)
+
+
+        self.U_Y2_button = Button(self.deflector, image=self.power_button, command=lambda: self.click_button(self.U_Y2_button, 'power', 'U_Y2'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.U_Y2_button.place(relx=0.1, rely=0.9, anchor=CENTER)
+
+        U_Y2_label1 = Label(self.deflector, text='U', font=font_14, bg = 'grey90', fg = 'black')
+        U_Y2_label1.place(relx=0.2, rely=0.9, anchor=CENTER)
+        #Creates subscript "ext" because Tkinter is stupid and doesn't support rich text in Labels
+        U_Y2_label2 = Label(self.deflector, text='Y2', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=3)
+        U_Y2_label2.place(relx=0.215, rely=0.93, anchor=W)
+
+        U_Y2_label3 = Label(self.deflector, text='= ', font=font_14, bg = 'grey90', fg = 'black')
+        U_Y2_label3.place(relx=0.32, rely=0.9, anchor=E)
+
+        self.U_Y2_entry = Entry(self.deflector, font=font_14, justify=RIGHT)
+        self.U_Y2_entry.place(relx=0.32, rely=0.9, anchor=W, width=60)
+        self.U_Y2_entry.insert(0, round(float(self.U_Y2_A),1))
+        self.U_Y2_entry.bind("<Return>", lambda eff: self.update_U_Y2())
+
+        U_Y2_label4 = Label(self.deflector, text='V', font=font_14, bg = 'grey90', fg = 'black')
+        U_Y2_label4.place(relx=0.49, rely=0.9, anchor=CENTER)
+
+        self.U_Y2_A_actual = Label(self.deflector, text=f'{round(float(self.U_Y2_A),1)} V', font=font_14, bg='grey90', fg='black')
+        self.U_Y2_A_actual.place(relx=0.75, rely=0.9, anchor=E)
+
+        self.U_Y2_B_actual = Label(self.deflector, text=f'{round(float(self.U_Y2_B),1)} V', font=font_14, bg='grey90', fg='black')
+        self.U_Y2_B_actual.place(relx=0.98, rely=0.9, anchor=E)
+
+    def gas_valve(self, x, y):
+        self.gas = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
+        self.gas.place(relx = x, rely = y, anchor = CENTER)
+
+        gasLabel = Label(self.gas, text = 'Gas Valve', font = font_18, bg = 'grey90', fg = 'black')
+        gasLabel.place(relx=0.3, rely=0.1, anchor = CENTER)
+
+        '''
+        self.anode_button = Button(self.anode, image=self.power_button, command=lambda: self.click_button(self.anode_button, 'power', 'anode_power'), borderwidth=0, bg='grey90', activebackground='grey90')
+        self.anode_button.place(relx=0.1, rely=0.25, anchor=CENTER)
+
+        U_an_label1 = Label(self.anode, text='U', font=font_14, bg = 'grey90', fg = 'black')
+        U_an_label1.place(relx=0.1, rely=0.49, anchor=CENTER)
+        #Creates subscript "An" because Tkinter is stupid and doesn't support rich text in Labels
+        U_an_label2 = Label(self.anode, text='An', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
+        U_an_label2.place(relx=0.115, rely=0.52, anchor=W)
+
+        U_an_label3 = Label(self.anode, text='= ', font=font_14, bg = 'grey90', fg = 'black')
+        U_an_label3.place(relx=0.24, rely=0.49, anchor=E)
+
+        self.U_an_entry = Entry(self.anode, font=font_14, justify=RIGHT)
+        self.U_an_entry.place(relx=0.24, rely=0.49, anchor=W, width=70)
+        self.U_an_entry.insert(0,str(self.U_an))
+        self.U_an_entry.bind("<Return>", lambda eff: self.update_U_an())
+
+        U_an_label4 = Label(self.anode, text='V', font=font_14, bg = 'grey90', fg = 'black')
+        U_an_label4.place(relx=0.44, rely=0.49, anchor=CENTER)
+
+        U_an__actual_label1 = Label(self.anode, text='U', font=font_14, bg = 'grey90', fg = 'black')
+        U_an__actual_label1.place(relx=0.1, rely=0.67, anchor=CENTER)
+        #Creates subscript "An" because Tkinter is stupid and doesn't support rich text in Labels
+        U_an__actual_label2 = Label(self.anode, text='An', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
+        U_an__actual_label2.place(relx=0.115, rely=0.7, anchor=W)
+
+        U_an__actual_label3 = Label(self.anode, text='= ', font=font_14, bg = 'grey90', fg = 'black')
+        U_an__actual_label3.place(relx=0.24, rely=0.67, anchor=E)
+
+        self.U_an_actual_label4 = Label(self.anode, text=f'{round(self.U_an,0)}', font=font_14, bg='grey90', fg='black')
+        self.U_an_actual_label4.place(relx=0.42, rely=0.67, anchor=E)
+
+        U_an_actual_label5 = Label(self.anode, text='V', font=font_14, bg = 'grey90', fg = 'black')
+        U_an_actual_label5.place(relx=0.44, rely=0.67, anchor=CENTER)
+
+        I_an_label1 = Label(self.anode, text='I', font=font_14, bg = 'grey90', fg = 'black')
+        I_an_label1.place(relx=0.105, rely=0.85, anchor=CENTER)
+        #Creates subscript "An" because Tkinter is stupid and doesn't support rich text in Labels
+        I_an_label2 = Label(self.anode, text='An', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
+        I_an_label2.place(relx=0.115, rely=0.88, anchor=W)
+
+        I_an_label3 = Label(self.anode, text='= ', font=font_14, bg = 'grey90', fg = 'black')
+        I_an_label3.place(relx=0.24, rely=0.85, anchor=E)
+
+        self.I_an_label4 = Label(self.anode, text=f'{round(self.I_an,0)}', font=font_14, bg='grey90', fg='black')
+        self.I_an_label4.place(relx=0.395, rely=0.85, anchor=E)
+
+        I_an_label5 = Label(self.anode, text='μA', font=font_14, bg = 'grey90', fg = 'black')
+        I_an_label5.place(relx=0.43, rely=0.85, anchor=CENTER)
+
+
+        self.anode_fig = Figure(figsize=(2,1.9))
+        self.anode_ax = self.anode_fig.add_subplot(111)
+        freqPlot = FigureCanvasTkAgg(self.anode_fig, self.anode)
+        freqPlot.get_tk_widget().place(relx=0.99, rely=0.98, anchor=SE)
+        self.anode_fig.patch.set_facecolor("#E5E5E5")
+        self.anode_ax.axes.set_facecolor(color='#E5E5E5')
+        self.anode_ax.axes.xaxis.set_visible(False)
+        self.anode_ax.set_ylim(0,10000)
+        self.anode_fig.tight_layout()
+        self.anode_ani = animation.FuncAnimation(self.anode_fig, self.animate, interval = 500)
+        '''
+        
+
     def makeGui(self, root=None):
         if root == None:
             self.root = Tk()
@@ -1228,6 +1512,8 @@ class EBIT:
         '''
         self.anode_controls(0.35, 0.12)
         self.lens_controls(0.35, 0.35)
+        self.deflector_controls(0.12, 0.58)
+        self.gas_valve(0.35, 0.58)
 
         #multiThreading(self.practice_data_updater)
         multiThreading(self.data_updater)
