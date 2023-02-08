@@ -134,7 +134,9 @@ class EBIT:
         self.U_B = None
         self.dt_timer = False
         self.t_ion = None
+        self.t_ion_set = None
         self.t_ext = None
+        self.t_ext_set = None
 
         #Faraday Cup Variables
         self.FC1 = None
@@ -197,7 +199,6 @@ class EBIT:
         self.U_EL1_q = False
         self.U_EL2_q = False
 
-        '''
         try:
             #Read Cathode variable values from sql server
             self.U_cat = sql.get_value(self.connection, 'hv_rack_values', 'CATHODE_V_R')
@@ -208,6 +209,8 @@ class EBIT:
             self.I_an = sql.get_value(self.connection, 'hv_rack_values', 'Anode_I_R')
 
             #Read Drfit Tube variable values from sql server
+            self.t_ion = sql.get_value(self.connection, 'hv_rack_values', 'T_ION')
+            self.t_ext = sql.get_value(self.connection, 'hv_rack_values', 'T_EXT')
             self.U_0 = sql.get_value(self.connection, 'hv_rack_values', 'U_0_R')
             self.U_A = sql.get_value(self.connection, 'hv_rack_values', 'U_A_R')
             self.U_B = sql.get_value(self.connection, 'hv_rack_values', 'U_B_R')
@@ -220,7 +223,43 @@ class EBIT:
             #Read Deflector variable values from sql server
             self.U_X1_A = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_A')
             self.U_X1_B = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_B')
-            '''
+            self.U_Y1_A = sql.get_value(self.connection, 'hv_rack_values', 'Y1_R_A')
+            self.U_Y1_B = sql.get_value(self.connection, 'hv_rack_values', 'Y1_R_B')
+            self.U_X2_A = sql.get_value(self.connection, 'hv_rack_values', 'X2_R_A')
+            self.U_X2_B = sql.get_value(self.connection, 'hv_rack_values', 'X2_R_B')
+            self.U_Y2_A = sql.get_value(self.connection, 'hv_rack_values', 'Y2_R_A')
+            self.U_Y2_B = sql.get_value(self.connection, 'hv_rack_values', 'Y2_R_B')
+        
+        except:
+            #Read Cathode variable values from sql server
+            self.U_cat = 0
+            self.I_cat = 0.00
+
+            #Read Anode variable values from sql server
+            self.U_an = 0
+            self.I_an = 0
+
+            #Read Drfit Tube variable values from sql server
+            self.t_ion = 3000
+            self.t_ext = 3000
+            self.U_0 = 4500
+            self.U_A = 500
+            self.U_B = 500
+
+            #Read Lens variable values from sql server
+            self.U_ext = 0
+            self.U_EL1 = 0
+            self.U_EL2 = 0
+
+            #Read Deflector variable values from sql server
+            self.U_X1_A = 0
+            self.U_X1_B = 0
+            self.U_Y1_A = 0
+            self.U_Y1_B = 0
+            self.U_X2_A = 0
+            self.U_X2_B = 0
+            self.U_Y2_A = 0
+            self.U_Y2_B = 0
 
         #Currently initializes variables just for testing purposes. Later, we will read in the actual values in the try block above
         if True:
@@ -237,29 +276,22 @@ class EBIT:
             self.anode_array = []
 
             #Cathode Variables
-            self.U_cat = 0
             self.I_heat = 0
             self.I_heat_set = 0
-            self.I_cat = 0.00
             self.U_filament = 0.00
             self.U_cat_set = 0
 
             #Anode Variables
-            self.U_an = 0
-            self.I_an = 0
             self.U_an_set = 0
 
             #Drift Tube Variables
-            self.U_0 = 4500
+            self.t_ion_set = 3000
+            self.t_ext_set = 3000
             self.U_0_set = 4500
             self.I_dt = 0
-            self.U_A = 500
             self.U_A_set = 500
             self.U_B1 = 0
             self.U_B2 = 456
-            self.U_B = 477.8
-            self.t_ion = 3000
-            self.t_ext = 3000
 
             #Faraday Cup Variables
             self.FC1 = 0
@@ -268,26 +300,15 @@ class EBIT:
             self.FC2_I = 0
 
             #Lens Variables
-            self.U_ext = 0
             self.U_ext_set = 0
-            self.U_EL1 = 0
             self.U_EL1_set = 0
-            self.U_EL2 = 0
             self.U_EL2_set = 0
 
             #Deflector Variables
             self.U_X1_set = 0
-            self.U_X1_A = 0
-            self.U_X1_B = 0
             self.U_Y1_set = 0
-            self.U_Y1_A = 0
-            self.U_Y1_B = 0
             self.U_X2_set = 0
-            self.U_X2_A = 0
-            self.U_X2_B = 0
             self.U_Y2_set = 0
-            self.U_Y2_A = 0
-            self.U_Y2_B = 0
 
             #Gas Valve Variables
             self.Gas_Valve = 0
@@ -479,6 +500,9 @@ class EBIT:
             self.time_array.append(time.time()-t0)
 
             #Read Drfit Tube variable values from sql server
+            self.t_ion = sql.get_value(self.connection, 'hv_rack_values', 'T_ION')
+            self.t_ext = sql.get_value(self.connection, 'hv_rack_values', 'T_EXT')
+
             self.U_0 = sql.get_value(self.connection, 'hv_rack_values', 'U_0_R')
             self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
 
@@ -557,6 +581,10 @@ class EBIT:
                 sql.send_value(self.connection, 'hv_rack_values', 'Anode_V_W', self.U_an_set)
 
             #Write Drift Tube variable values to sql server
+            if self.t_ion != self.t_ion_set:
+                sql.send_value(self.connection, 'hv_rack_values', 'T_ION', self.t_ion_set)
+            if self.t_ext != self.t_ext_set:
+                sql.send_value(self.connection, 'hv_rack_values', 'T_EXT', self.t_ext_set)
             if self.U_0 != self.U_0_set:
                 sql.send_value(self.connection, 'hv_rack_values', 'U_0_W', self.U_0_set)
             if self.U_A != self.U_A_set:
@@ -830,6 +858,18 @@ class EBIT:
         self.I_heat_entry.delete(0, END)
         self.I_heat_entry.insert(0, "{:.2f}".format(self.I_heat_set))
         print('cathode current')
+    
+    def update_t_ion(self):
+        self.t_ion_set = float(self.t_ion_entry.get())
+        self.t_ion_entry.delete(0, END)
+        self.t_ion_entry.insert(0, int(round(self.t_ion_set,0)))
+        print('ion bake time')
+
+    def update_t_ext(self):
+        self.t_ext_set = float(self.t_ext_entry.get())
+        self.t_ext_entry.delete(0, END)
+        self.t_ext_entry.insert(0, int(round(self.t_ext_set,0)))
+        print('ion extract time')
 
     def update_U_0(self):
         self.U_0_set = float(self.U_0_entry.get())
@@ -1078,7 +1118,7 @@ class EBIT:
         self.t_ion_entry = Entry(self.dt, font=font_14, justify=RIGHT)
         self.t_ion_entry.place(relx=0.46, rely=0.25, anchor=W, width=50)
         self.t_ion_entry.insert(0,str(self.t_ion))
-        #self.U_0_entry.bind("<Return>", lambda eff: self.update_t_ion())
+        self.t_ion_entry.bind("<Return>", lambda eff: self.update_t_ion())
 
         t_ion_label3 = Label(self.dt, text='ms', font=font_14, bg='grey90', fg='black')
         t_ion_label3.place(relx=0.63, rely=0.25, anchor=CENTER)
@@ -1091,7 +1131,7 @@ class EBIT:
         self.t_ext_entry = Entry(self.dt, font=font_14, justify=RIGHT)
         self.t_ext_entry.place(relx=0.79, rely=0.25, anchor=W, width=50)
         self.t_ext_entry.insert(0,str(self.t_ext))
-        #self.U_0_entry.bind("<Return>", lambda eff: self.update_t_ext())
+        self.t_ext_entry.bind("<Return>", lambda eff: self.update_t_ext())
 
         t_ext_label3 = Label(self.dt, text='ms', font=font_14, bg='grey90', fg='black')
         t_ext_label3.place(relx=0.96, rely=0.25, anchor=CENTER)
