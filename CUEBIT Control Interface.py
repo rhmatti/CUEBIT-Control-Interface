@@ -1,6 +1,6 @@
 #CUEBIT Control Interface
 #Author: Richard Mattish
-#Last Updated: 05/25/2022
+#Last Updated: 02/22/2023
 
 
 #Function:  This program provides a graphical user interface for controlling
@@ -199,14 +199,7 @@ class EBIT:
         self.doors = None
         self.EMO = None
 
-        #Power Buttons
-        self.U_cat_power = False
-        self.I_heat_power = False
-        self.anode_power = False
-        self.dt_power = False
-        self.U_ext_power = False
-        self.U_EL1_power = False
-        self.U_EL2_power = False
+
 
         #Other Buttons
         self.U_EL1_q = False
@@ -243,6 +236,15 @@ class EBIT:
             self.U_X2_B = self.client.get_float('Deflectors_XY2_XB')[1]
             self.U_Y2_A = self.client.get_float('Deflectors_XY2_YA')[1]
             self.U_Y2_B = self.client.get_float('Deflectors_XY2_YB')[1]
+
+            #Power Buttons
+            self.U_cat_power = self.client.get_bool('Cathode_Voltage_Power')[1]
+            self.I_heat_power = self.client.get_bool('Cathode_Heater_Power')[1]
+            self.anode_power = self.client.get_bool('Anode_Power')[1]
+            self.dt_power = self.client.get_bool('Drift_Tubes_Power')[1]
+            self.U_ext_power = self.client.get_bool('Extraction_Voltage_Power')[1]
+            self.U_EL1_power = self.client.get_bool('Lens_1_Voltage_Power')[1]
+            self.U_EL2_power = self.client.get_bool('Lens_2_Voltage_Power')[1]
         
         except:
             #Read Cathode variable values from server
@@ -274,6 +276,15 @@ class EBIT:
             self.U_X2_B = 0
             self.U_Y2_A = 0
             self.U_Y2_B = 0
+
+            #Power Buttons
+            self.U_cat_power = False
+            self.I_heat_power = False
+            self.anode_power = False
+            self.dt_power = False
+            self.U_ext_power = False
+            self.U_EL1_power = False
+            self.U_EL2_power = False
 
         #Currently initializes variables just for testing purposes. Later, we will read in the actual values in the try block above
         if True:
@@ -489,7 +500,7 @@ class EBIT:
         #self.anode_ax.set_ylabel('Potential (V)')
         self.anode_ax.set_ylim(0,12000)
 
-    def data_updater(self):
+    def data_reader(self):
         t0 = time.time()
         while True:
             #Read Cathode variable values from server
@@ -1304,70 +1315,6 @@ class EBIT:
 
         gasLabel = Label(self.gas, text = 'Gas Valve', font = font_18, bg = 'grey90', fg = 'black')
         gasLabel.place(relx=0.3, rely=0.1, anchor = CENTER)
-
-        '''
-        self.anode_button = Button(self.anode, image=self.power_button, command=lambda: self.click_button(self.anode_button, 'power', 'anode_power'), borderwidth=0, bg='grey90', activebackground='grey90')
-        self.anode_button.place(relx=0.1, rely=0.25, anchor=CENTER)
-
-        U_an_label1 = Label(self.anode, text='U', font=font_14, bg = 'grey90', fg = 'black')
-        U_an_label1.place(relx=0.1, rely=0.49, anchor=CENTER)
-        #Creates subscript "An" because Tkinter is stupid and doesn't support rich text in Labels
-        U_an_label2 = Label(self.anode, text='An', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
-        U_an_label2.place(relx=0.115, rely=0.52, anchor=W)
-
-        U_an_label3 = Label(self.anode, text='= ', font=font_14, bg = 'grey90', fg = 'black')
-        U_an_label3.place(relx=0.24, rely=0.49, anchor=E)
-
-        self.U_an_entry = Entry(self.anode, font=font_14, justify=RIGHT)
-        self.U_an_entry.place(relx=0.24, rely=0.49, anchor=W, width=70)
-        self.U_an_entry.insert(0,str(self.U_an))
-        self.U_an_entry.bind("<Return>", lambda eff: self.update_U_an())
-
-        U_an_label4 = Label(self.anode, text='V', font=font_14, bg = 'grey90', fg = 'black')
-        U_an_label4.place(relx=0.44, rely=0.49, anchor=CENTER)
-
-        U_an__actual_label1 = Label(self.anode, text='U', font=font_14, bg = 'grey90', fg = 'black')
-        U_an__actual_label1.place(relx=0.1, rely=0.67, anchor=CENTER)
-        #Creates subscript "An" because Tkinter is stupid and doesn't support rich text in Labels
-        U_an__actual_label2 = Label(self.anode, text='An', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
-        U_an__actual_label2.place(relx=0.115, rely=0.7, anchor=W)
-
-        U_an__actual_label3 = Label(self.anode, text='= ', font=font_14, bg = 'grey90', fg = 'black')
-        U_an__actual_label3.place(relx=0.24, rely=0.67, anchor=E)
-
-        self.U_an_actual_label4 = Label(self.anode, text=f'{round(self.U_an,0)}', font=font_14, bg='grey90', fg='black')
-        self.U_an_actual_label4.place(relx=0.42, rely=0.67, anchor=E)
-
-        U_an_actual_label5 = Label(self.anode, text='V', font=font_14, bg = 'grey90', fg = 'black')
-        U_an_actual_label5.place(relx=0.44, rely=0.67, anchor=CENTER)
-
-        I_an_label1 = Label(self.anode, text='I', font=font_14, bg = 'grey90', fg = 'black')
-        I_an_label1.place(relx=0.105, rely=0.85, anchor=CENTER)
-        #Creates subscript "An" because Tkinter is stupid and doesn't support rich text in Labels
-        I_an_label2 = Label(self.anode, text='An', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=2)
-        I_an_label2.place(relx=0.115, rely=0.88, anchor=W)
-
-        I_an_label3 = Label(self.anode, text='= ', font=font_14, bg = 'grey90', fg = 'black')
-        I_an_label3.place(relx=0.24, rely=0.85, anchor=E)
-
-        self.I_an_label4 = Label(self.anode, text=f'{round(self.I_an,0)}', font=font_14, bg='grey90', fg='black')
-        self.I_an_label4.place(relx=0.395, rely=0.85, anchor=E)
-
-        I_an_label5 = Label(self.anode, text='μA', font=font_14, bg = 'grey90', fg = 'black')
-        I_an_label5.place(relx=0.43, rely=0.85, anchor=CENTER)
-
-
-        self.anode_fig = Figure(figsize=(2,1.9))
-        self.anode_ax = self.anode_fig.add_subplot(111)
-        freqPlot = FigureCanvasTkAgg(self.anode_fig, self.anode)
-        freqPlot.get_tk_widget().place(relx=0.99, rely=0.98, anchor=SE)
-        self.anode_fig.patch.set_facecolor("#E5E5E5")
-        self.anode_ax.axes.set_facecolor(color='#E5E5E5')
-        self.anode_ax.axes.xaxis.set_visible(False)
-        self.anode_ax.set_ylim(0,10000)
-        self.anode_fig.tight_layout()
-        self.anode_ani = animation.FuncAnimation(self.anode_fig, self.animate, interval = 500)
-        '''
         
 
     def makeGui(self, root=None):
@@ -1402,8 +1349,6 @@ class EBIT:
         self.cathode_controls(0.12, 0.12)
         self.drift_tube_controls(0.12, 0.35)
         '''
-        self.cathode_controls(0.12, 0.35)
-        self.cathode_controls(0.12, 0.58)
         self.cathode_controls(0.12, 0.81)
         '''
         self.anode_controls(0.35, 0.12)
@@ -1411,8 +1356,7 @@ class EBIT:
         self.deflector_controls(0.12, 0.58)
         self.gas_valve(0.35, 0.58)
 
-        #multiThreading(self.practice_data_updater)
-        multiThreading(self.data_updater)
+        multiThreading(self.data_reader)
         self.root.mainloop()
 
 
