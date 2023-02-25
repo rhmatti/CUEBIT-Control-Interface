@@ -38,7 +38,8 @@ import pandas as pd
 
 
 # Set true for if running dummy server.
-DEBUG = False
+#DEBUG = False
+DEBUG = True
 
 import data_client
 ADDR = data_client.ADDR
@@ -571,371 +572,210 @@ class EBIT:
             self.U_Y2_B = self.client.get_float('Deflectors_XY2_YB')[1]
             self.U_Y2_B_actual.config(text=f'{round(float(self.U_Y2_B),1)} V')
 
-
-
-            #Write Cathode variable values to server
-            if self.U_cat != self.U_cat_set and self.U_cat_set >= 0:
-                self.client.set_float('Cathode_Voltage_Set', self.U_cat_set)
-            elif self.U_cat_set < 0:
-                self.U_cat_set = self.U_cat
-                helpMessage ='Please enter a positive value'
-                messageVar = Message(self.cathode, text = helpMessage, font = font_12, width = 600) 
-                messageVar.config(bg='firebrick1')
-                messageVar.place(relx = 0.5, rely = 0.25, anchor = CENTER)
-                self.cathode.after(5000, messageVar.destroy)
-
-            if self.I_heat != self.I_heat_set and self.I_heat_power:
-                self.I_heat = self.I_heat_set
-                self.I_heat_actual.config(text="{:.2f}".format(self.I_heat) + ' A')
-            
-            elif not self.I_heat_power and self.I_heat != 0:
-                self.I_heat = 0
-                self.I_heat_actual.config(text=f'{int(round(self.I_heat,0))}')
-
-            #Write Anode variable values to server
-            if self.U_an != self.U_an_set:
-                self.client.set_float('Anode_Voltage_Set', self.U_an_set)
-
-            #Write Drift Tube variable values to server
-            if self.t_ion != self.t_ion_set:
-                self.client.set_float('Drift_Tubes_T_Ion', self.t_ion_set)
-            if self.t_ext != self.t_ext_set:
-                self.client.set_float('Drift_Tubes_T_Ext', self.t_ext_set)
-            if self.U_0 != self.U_0_set:
-                self.client.set_float('Drift_Tubes_U0_Set', self.U_0_set)
-            if self.U_A != self.U_A_set:
-                self.client.set_float('Drift_Tubes_UA_Set', self.U_A_set)
-                
-
-            #Write Lens variable values to server
-            if self.U_ext != self.U_ext_set:
-                if self.U_ext_set < 0:
-                    self.U_ext_set = self.U_ext
-                    helpMessage ='Please enter a positive value'
-                    messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                    messageVar.config(bg='firebrick1')
-                    messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                    self.lens.after(5000, messageVar.destroy)
-                else:
-                    self.client.set_float('Extraction_Voltage_Set', self.U_ext_set)
-
-            if self.U_EL1 != self.U_EL1_set:
-                if self.U_EL1_q == False:
-                    if self.U_EL1_set < 0:
-                        self.U_EL1_set = self.U_EL1
-                        helpMessage ='Please enter a positive value'
-                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                        messageVar.config(bg='firebrick1')
-                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                        self.lens.after(5000, messageVar.destroy)
-                    else:
-                        self.client.set_float('Lens_1_Voltage_Set', self.U_EL1_set)
-
-                elif self.U_EL1_q == True:
-                    if self.U_EL1_set > 0:
-                        self.U_EL1_set = self.U_EL1
-                        helpMessage ='Please enter a positive value'
-                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                        messageVar.config(bg='firebrick1')
-                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                        self.lens.after(5000, messageVar.destroy)
-                    else:
-                        self.client.set_float('Lens_1_Voltage_Set', -self.U_EL1_set)
-
-            
-            if self.U_EL2 != self.U_EL2_set:
-                if self.U_EL2_q == False:
-                    if self.U_EL2_set < 0:
-                        self.U_EL2_set = self.U_EL2
-                        helpMessage ='Please enter a positive value'
-                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                        messageVar.config(bg='firebrick1')
-                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                        self.lens.after(5000, messageVar.destroy)
-                    else:
-                        self.client.set_float('Lens_2_Voltage_Set', self.U_EL2_set)
-
-                elif self.U_EL2_q == True:
-                    if self.U_EL2_set > 0:
-                        self.U_EL2_set = self.U_EL2
-                        helpMessage ='Please enter a positive value'
-                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                        messageVar.config(bg='firebrick1')
-                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                        self.lens.after(5000, messageVar.destroy)
-                    else:
-                        self.client.set_float('Lens_2_Voltage_Set', -self.U_EL2_set)
-
-            #Write Deflector variable values to server
-            if self.U_X1_A != self.U_X1_set:
-                self.client.set_float('Deflectors_XY1_X_Set', self.U_X1_set)
-            if self.U_Y1_A != self.U_Y1_set:
-                self.client.set_float('Deflectors_XY1_Y_Set', self.U_Y1_set)
-            if self.U_X2_A != self.U_X2_set:
-                self.client.set_float('Deflectors_XY2_X_Set', self.U_X2_set)
-            if self.U_Y2_A != self.U_Y2_set:
-                self.client.set_float('Deflectors_XY2_Y_Set', self.U_Y2_set)
-
-
-
             time.sleep(0.1)
-                
-
-
-    def practice_data_updater(self):
-        t0 = time.time()
-        while True:
-            if len(self.anode_array) > 10:
-                self.anode_array.pop(0)
-                self.time_array.pop(0)
-            self.anode_array.append(self.U_an)
-            self.time_array.append(time.time()-t0)
-
-            if self.U_cat != self.U_cat_set and self.U_cat_set >= 0 and self.U_cat_power:
-                if self.U_cat < self.U_cat_set:
-                    if abs(self.U_cat-self.U_cat_set) > 200:
-                        self.U_cat = self.U_cat + 200
-                    else:
-                        self.U_cat = self.U_cat_set
-                elif self.U_cat > self.U_cat_set:
-                    if abs(self.U_cat-self.U_cat_set) > 200:
-                        self.U_cat = self.U_cat - 200
-                    else:
-                        self.U_cat = self.U_cat_set
-                self.U_cat_actual.config(text = f'-{int(round(self.U_cat,0))} V')
-            elif self.U_cat_set < 0:
-                self.U_cat_set = self.U_cat
-                helpMessage ='Please enter a positive value'
-                messageVar = Message(self.cathode, text = helpMessage, font = font_12, width = 600) 
-                messageVar.config(bg='firebrick1')
-                messageVar.place(relx = 0.5, rely = 0.25, anchor = CENTER)
-                self.cathode.after(5000, messageVar.destroy)
-            elif not self.U_cat_power and self.U_cat != 0:
-                self.U_cat = 0
-                self.U_cat_actual.config(text=f'{int(round(self.U_cat,0))}')
-            
-
-            if self.U_an != self.U_an_set and self.anode_power == True:
-                if self.U_an < self.U_an_set:
-                    if abs(self.U_an-self.U_an_set) > 200:
-                        self.U_an = self.U_an + 200
-                    else:
-                        self.U_an = self.U_an_set
-                elif self.U_an > self.U_an_set:
-                    if abs(self.U_an-self.U_an_set) > 200:
-                        self.U_an = self.U_an - 200
-                    else:
-                        self.U_an = self.U_an_set
-                self.U_an_actual_label4.config(text = f'{int(round(self.U_an,0))}')
-            elif self.anode_power == False and self.U_an != 0:
-                self.U_an = 0
-                self.U_an_actual_label4.config(text=f'{int(round(self.U_an,0))}')
-            
-            if self.I_heat != self.I_heat_set and self.I_heat_power:
-                self.I_heat = self.I_heat_set
-                self.I_heat_actual.config(text="{:.2f}".format(self.I_heat) + ' A')
-            
-            elif not self.I_heat_power and self.I_heat != 0:
-                self.I_heat = 0
-                self.I_heat_actual.config(text=f'{int(round(self.I_heat,0))}')
-
-            if self.dt_power == True:
-                if self.U_0 != self.U_0_set:
-                    self.U_0 = self.U_0_set
-                    self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
-                if self.U_A != self.U_A_set:
-                    self.U_A = self.U_A_set
-                    self.U_A_actual.config(text="-{:.1f} V".format(self.U_A))
-
-            elif self.dt_power == False:
-                if self.U_0 != 0:
-                    self.U_0 = 0
-                    self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
-                if self.U_A != 0:
-                    self.U_A = 0
-                    self.U_A_actual.config(text=f'{int(round(self.U_A,0))} V')
-
-
-            if self.U_ext != self.U_ext_set and self.U_ext_power == True:
-                self.U_ext = self.U_ext_set
-                if self.U_ext > 0:
-                    self.U_ext_actual.config(text=f'-{int(round(self.U_ext,0))} V')
-                elif self.U_ext == 0:
-                    self.U_ext_actual.config(text=f'{int(round(self.U_ext,0))} V')
-                elif self.U_ext_set < 0:
-                    self.U_ext_set = self.U_ext
-                    helpMessage ='Please enter a positive value'
-                    messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                    messageVar.config(bg='firebrick1')
-                    messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                    self.lens.after(5000, messageVar.destroy)
-            elif not self.U_ext_power and self.U_ext != 0:
-                self.U_ext = 0
-                self.U_ext_actual.config(text=f'{int(round(self.U_ext,0))} V')
-            
-            
-            if self.U_EL1 != self.U_EL1_set and self.U_EL1_power == True:
-                if self.U_EL1_q == False:
-                    if self.U_EL1_set < 0:
-                        self.U_EL1_set = self.U_EL1
-                        helpMessage ='Please enter a positive value'
-                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                        messageVar.config(bg='firebrick1')
-                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                        self.lens.after(5000, messageVar.destroy)
-
-                    elif self.U_EL1_set == 0:
-                        self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
-                    
-                    else:
-                        self.U_EL1 = self.U_EL1_set
-
-                        self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
-
-                elif self.U_EL1_q == True:
-                    if self.U_EL1_set > 0:
-                        self.U_EL1_set = self.U_EL1
-                        helpMessage ='Please enter a positive value'
-                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                        messageVar.config(bg='firebrick1')
-                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                        self.lens.after(5000, messageVar.destroy)
-
-                    elif self.U_EL1_set == 0:
-                        self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
-
-                    else:
-                        self.U_EL1 = self.U_EL1_set
-                        self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
-
-
-            elif not self.U_EL1_power and self.U_EL1 != 0:
-                self.U_EL1 = 0
-                self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
-
-
-            if self.U_EL2 != self.U_EL2_set and self.U_EL2_power == True:
-                if self.U_EL2_q == False:
-                    if self.U_EL2_set < 0:
-                        self.U_EL2_set = self.U_EL2
-                        helpMessage ='Please enter a positive value'
-                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                        messageVar.config(bg='firebrick1')
-                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                        self.lens.after(5000, messageVar.destroy)
-
-                    elif self.U_EL2_set == 0:
-                        self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
-                    
-                    else:
-                        self.U_EL2 = self.U_EL2_set
-                        self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
-
-                elif self.U_EL2_q == True:
-                    if self.U_EL2_set > 0:
-                        self.U_EL2_set = self.U_EL2
-                        helpMessage ='Please enter a positive value'
-                        messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
-                        messageVar.config(bg='firebrick1')
-                        messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
-                        self.lens.after(5000, messageVar.destroy)
-
-                    elif self.U_EL2_set == 0:
-                        self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
-
-                    else:
-                        self.U_EL2 = self.U_EL2_set
-                        self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
-
-            elif not self.U_EL2_power and self.U_EL2 != 0:
-                self.U_EL2 = 0
-                self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
-
-
-            self.I_dt_label.config(text=f'{int(round(self.I_dt,0))} μA')
-            self.U_B_actual.config(text="-{:.1f} V".format(self.U_B))
-
-            time.sleep(1)
     
     def update_U_cat(self):
         self.U_cat_set = float(self.U_cat_entry.get())
         self.U_cat_entry.delete(0, END)
         self.U_cat_entry.insert(0, int(round(self.U_cat_set,0)))
-        print('cathode potential')
+        
+        #Write Cathode variable values to server
+        if self.U_cat_set >= 0 and self.U_cat_set <= 6500:
+            self.client.set_float('Cathode_Voltage_Set', self.U_cat_set)
+            print('cathode potential set')
+        elif self.U_cat_set < 0:
+            self.U_cat_set = self.U_cat
+            helpMessage ='Please enter a positive value'
+            messageVar = Message(self.cathode, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.25, anchor = CENTER)
+            self.cathode.after(5000, messageVar.destroy)
+        elif self.U_cat_set > 6500:
+            self.U_cat_set = self.U_cat
+            helpMessage ='Maximum voltage is 6500'
+            messageVar = Message(self.cathode, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.25, anchor = CENTER)
+            self.cathode.after(5000, messageVar.destroy)
     
     def update_U_an(self):
         self.U_an_set = float(self.U_an_entry.get())
         self.U_an_entry.delete(0, END)
         self.U_an_entry.insert(0, int(round(self.U_an_set,0)))
-        print('anode potential')
+
+        #Write Anode variable values to server
+        if self.U_an_set >= 0 and self.U_an_set <= 20000:
+            self.client.set_float('Anode_Voltage_Set', self.U_an_set)
+            print('anode potential set')
+        elif self.U_an_set < 0:
+            self.U_an_set = self.U_an
+            helpMessage ='Please enter a\n positive value'
+            messageVar = Message(self.anode, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.32, rely = 0.28, anchor = CENTER)
+            self.anode.after(5000, messageVar.destroy)
+        elif self.U_an_set > 20000:
+            self.U_an_set = self.U_an
+            helpMessage ='Maximum voltage\n is 20000'
+            messageVar = Message(self.anode, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.32, rely = 0.28, anchor = CENTER)
+            self.anode.after(5000, messageVar.destroy)
     
     def update_I_heat(self):
         self.I_heat_set = float(self.I_heat_entry.get())
         self.I_heat_entry.delete(0, END)
         self.I_heat_entry.insert(0, "{:.2f}".format(self.I_heat_set))
-        print('cathode current')
+        
+        if self.I_heat_set >= 0 and self.I_heat_set <=10:
+            self.I_heat_actual.config(text="{:.2f}".format(self.I_heat) + ' A')
+            print('cathode current set')
+        elif self.I_heat_set < 0:
+            self.I_heat_set = self.I_heat
+            helpMessage ='Please enter a positive value'
+            messageVar = Message(self.cathode, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.7, anchor = CENTER)
+            self.cathode.after(5000, messageVar.destroy)
+        elif self.I_heat_set > 10:
+            self.I_heat_set = self.I_heat
+            helpMessage ='Maximum current is 10'
+            messageVar = Message(self.cathode, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.7, anchor = CENTER)
+            self.cathode.after(5000, messageVar.destroy)
     
     def update_t_ion(self):
         self.t_ion_set = float(self.t_ion_entry.get())
         self.t_ion_entry.delete(0, END)
         self.t_ion_entry.insert(0, int(round(self.t_ion_set,0)))
-        print('ion bake time')
+        if self.t_ion_set >= 10 and self.t_ion_set <= 10000:
+            self.client.set_float('Drift_Tubes_T_Ion', self.t_ion_set)
+            print('ion bake time set')
 
     def update_t_ext(self):
         self.t_ext_set = float(self.t_ext_entry.get())
         self.t_ext_entry.delete(0, END)
         self.t_ext_entry.insert(0, int(round(self.t_ext_set,0)))
-        print('ion extract time')
+        if self.t_ext_set >= 10 and self.t_ext_set <= 10000:
+            self.client.set_float('Drift_Tubes_T_Ext', self.t_ext_set)
+            print('ion extract time')
 
     def update_U_0(self):
         self.U_0_set = float(self.U_0_entry.get())
         self.U_0_entry.delete(0, END)
         self.U_0_entry.insert(0, int(round(self.U_0_set,0)))
-        print('drift tube potential')
+        if self.U_0_set >= 0 and self.U_0_set <= 20000:
+            self.client.set_float('Drift_Tubes_U0_Set', self.U_0_set)
+            print('drift tube potential set')
 
     def update_U_A(self):
         self.U_A_set = float(self.U_A_entry.get())
         self.U_A_entry.delete(0, END)
         self.U_A_entry.insert(0, round(self.U_A_set,1))
-        print('drift tube trapping potential')
+        if self.U_A_set >= 10 and self.U_A_set <= 2000:
+            self.client.set_float('Drift_Tubes_UA_Set', self.U_A_set)
+            print('drift tube trapping potential')
     
     def update_U_ext(self):
         self.U_ext_set = float(self.U_ext_entry.get())
         self.U_ext_entry.delete(0, END)
         self.U_ext_entry.insert(0, int(round(self.U_ext_set,0)))
-        print('U_ext set')
+
+        #Write Lens variable values to server
+        if self.U_ext_set >= 14 and self.U_ext_set <=10000:
+            self.client.set_float('Extraction_Voltage_Set', self.U_ext_set)
+            print('extraction lens potential set')
+        elif self.U_ext_set < 14:
+            self.U_ext_set = self.U_ext
+            helpMessage ='Please enter a value greater than 14'
+            messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.21, anchor = CENTER)
+            self.lens.after(5000, messageVar.destroy)
+        elif self.U_ext_set > 10000:
+            self.U_ext_set = self.U_ext
+            helpMessage ='Please enter a value less than 10000'
+            messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.21, anchor = CENTER)
+            self.lens.after(5000, messageVar.destroy)
 
     def update_U_EL1(self):
         self.U_EL1_set = float(self.U_EL1_entry.get())
         self.U_EL1_entry.delete(0, END)
         self.U_EL1_entry.insert(0, int(round(self.U_EL1_set,0)))
-        print('U_EL1 set')
+        if self.U_EL1_set >= 14 and self.U_EL1_set <= 10000:
+            self.client.set_float('Lens_1_Voltage_Set', self.U_EL1_set)
+            print('einzel lens 1 potential set')
+        elif self.U_EL1_set < 14:
+            self.U_EL1_set = self.U_EL1
+            helpMessage ='Please enter a value greater than 14'
+            messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.21, anchor = CENTER)
+            self.lens.after(5000, messageVar.destroy)
+        elif self.U_EL1_set > 10000:
+            self.U_EL1_set = self.U_EL1
+            helpMessage ='Please enter a value less than 10000'
+            messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.21, anchor = CENTER)
+            self.lens.after(5000, messageVar.destroy)
 
     def update_U_EL2(self):
         self.U_EL2_set = float(self.U_EL2_entry.get())
         self.U_EL2_entry.delete(0, END)
         self.U_EL2_entry.insert(0, int(round(self.U_EL2_set,0)))
-        print('U_EL2 set')
+        if self.U_EL2_set >= 14 and self.U_EL2_set <= 10000:
+            self.client.set_float('Lens_2_Voltage_Set', self.U_EL2_set)
+            print('einzel lens 2 potential set')
+        elif self.U_EL2_set < 14:
+            self.U_EL2_set = self.U_EL2
+            helpMessage ='Please enter a value greater than 14'
+            messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.21, anchor = CENTER)
+            self.lens.after(5000, messageVar.destroy)
+        elif self.U_EL2_set > 10000:
+            self.U_EL2_set = self.U_EL2
+            helpMessage ='Please enter a value less than 10000'
+            messageVar = Message(self.lens, text = helpMessage, font = font_12, width = 600) 
+            messageVar.config(bg='firebrick1')
+            messageVar.place(relx = 0.5, rely = 0.21, anchor = CENTER)
+            self.lens.after(5000, messageVar.destroy)
     
     def update_U_X1(self):
         self.U_X1_set = float(self.U_X1_entry.get())
         self.U_X1_entry.delete(0, END)
         self.U_X1_entry.insert(0, round(self.U_X1_set,1))
+        if abs(self.U_X1_set) <= 1000:
+            self.client.set_float('Deflectors_XY1_X_Set', self.U_X1_set)
+            print('X1 deflector potential set')
 
     def update_U_Y1(self):
         self.U_Y1_set = float(self.U_Y1_entry.get())
         self.U_Y1_entry.delete(0, END)
         self.U_Y1_entry.insert(0, round(self.U_Y1_set,1))
+        if abs(self.U_Y1_set) <= 1000:
+            self.client.set_float('Deflectors_XY1_Y_Set', self.U_Y1_set)
+            print('Y1 deflector potential set')
 
     def update_U_X2(self):
         self.U_X2_set = float(self.U_X2_entry.get())
         self.U_X2_entry.delete(0, END)
         self.U_X2_entry.insert(0, round(self.U_X2_set,1))
+        if abs(self.U_X2_set) <= 1000:
+            self.client.set_float('Deflectors_XY2_X_Set', self.U_X2_set)
+            print('X2 deflector potential set')
 
     def update_U_Y2(self):
         self.U_Y2_set = float(self.U_Y2_entry.get())
         self.U_Y2_entry.delete(0, END)
         self.U_Y2_entry.insert(0, round(self.U_Y2_set,1))
+        if abs(self.U_Y2_set) <= 1000:
+            self.client.set_float('Deflectors_XY2_Y_Set', self.U_Y2_set)
+            print('Y2 deflector potential set')
 
 
     
