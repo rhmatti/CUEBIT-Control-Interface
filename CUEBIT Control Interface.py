@@ -22,10 +22,8 @@ from tkinter import ttk
 from tkinter import filedialog
 from PIL import ImageTk, Image
 
-#Import SQL Tools
-import sql
-#import mysql.connector
-#from mysql.connector import Error
+#Import Server Tools
+from data_client import BaseDataClient
 
 #Import Math Tools
 import matplotlib
@@ -37,6 +35,23 @@ import matplotlib.animation as animation
 import numpy as np
 import scipy as sp
 import pandas as pd
+
+
+# Set true for if running dummy server.
+DEBUG = False
+
+import data_client
+ADDR = data_client.ADDR
+try:
+    import socket
+    on_network = str(socket.gethostbyname(socket.gethostname())).startswith('192.168.0.')
+    if not on_network:
+        DEBUG = True
+except:
+    pass
+
+if DEBUG:
+    ADDR = ("130.127.188.254", 20002)
 
 
 #Defines location of the Desktop as well as font and text size for use in the software
@@ -87,16 +102,13 @@ def startProgram(root=None):
 #This is the EBIT class object, which contains everything related to the GUI control interface
 class EBIT:
     def __init__(self):
-        #Establishes connection to SQL Server
-        query_format = f'''
-        SELECT name FROM test_data;
-        '''
-        #self.connection = create_server_connection("localhost", "cuebit", "cuebit", "data")
-        #print(read_query(self.connection, query_format))
+        #Establishes connection to Server
         try:
-            self.connection = sql.create_server_connection("130.127.189.200", "cuebit", "cuebit", "data")
+            self.client = BaseDataClient(ADDR)
+            self.client.select()
         except:
-            print('Error: Could not establish connection to SQL server')
+            print('Error: Could not establish connection to server')
+
 
         #Defines global variables
         self.canvas = None
@@ -200,58 +212,59 @@ class EBIT:
         self.U_EL2_q = False
 
         try:
-            #Read Cathode variable values from sql server
-            self.U_cat = sql.get_value(self.connection, 'hv_rack_values', 'CATHODE_V_R')
-            self.I_cat = sql.get_value(self.connection, 'hv_rack_values', 'CATHODE_I_Emiss')
+            #Read Cathode variable values from server
+            self.U_cat = self.client.get_float('Cathode_Voltage_Read')[1]
+            self.I_cat = self.client.get_float('Cathode_Emission')[1]
 
-            #Read Anode variable values from sql server
-            self.U_an = sql.get_value(self.connection, 'hv_rack_values', 'Anode_V_R')
-            self.I_an = sql.get_value(self.connection, 'hv_rack_values', 'Anode_I_R')
+            #Read Anode variable values from server
+            self.U_an = self.client.get_float('Anode_Voltage_Read')[1]
+            self.I_an = self.client.get_float('Anode_Current')[1]
 
-            #Read Drfit Tube variable values from sql server
-            self.t_ion = sql.get_value(self.connection, 'hv_rack_values', 'T_ION')
-            self.t_ext = sql.get_value(self.connection, 'hv_rack_values', 'T_EXT')
-            self.U_0 = sql.get_value(self.connection, 'hv_rack_values', 'U_0_R')
-            self.U_A = sql.get_value(self.connection, 'hv_rack_values', 'U_A_R')
-            self.U_B = sql.get_value(self.connection, 'hv_rack_values', 'U_B_R')
+            #Read Drfit Tube variable values from server
+            self.t_ion = self.client.get_float('Drift_Tubes_T_Ion')[1]
+            self.t_ext = self.client.get_float('Drift_Tubes_T_Ext')[1]
+            self.U_0 = self.client.get_float('Drift_Tubes_U0_Read')[1]
+            self.U_A = self.client.get_float('Drift_Tubes_UA_Read')[1]
+            self.U_B = self.client.get_float('Drift_Tubes_UB')[1]
+            self.I_dt = self.client.get_float('Drift_Tubes_Current')[1]
 
-            #Read Lens variable values from sql server
-            self.U_ext = sql.get_value(self.connection, 'hv_rack_values', 'EXT_R')
-            self.U_EL1 = sql.get_value(self.connection, 'hv_rack_values', 'EL1_R')
-            self.U_EL2 = sql.get_value(self.connection, 'hv_rack_values', 'EL2_R')
+            #Read Lens variable values from server
+            self.U_ext = self.client.get_float('Extraction_Voltage_Read')[1]
+            self.U_EL1 = self.client.get_float('Lens_1_Voltage_Read')[1]
+            self.U_EL2 = self.client.get_float('Lens_2_Voltage_Read')[1]
 
-            #Read Deflector variable values from sql server
-            self.U_X1_A = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_A')
-            self.U_X1_B = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_B')
-            self.U_Y1_A = sql.get_value(self.connection, 'hv_rack_values', 'Y1_R_A')
-            self.U_Y1_B = sql.get_value(self.connection, 'hv_rack_values', 'Y1_R_B')
-            self.U_X2_A = sql.get_value(self.connection, 'hv_rack_values', 'X2_R_A')
-            self.U_X2_B = sql.get_value(self.connection, 'hv_rack_values', 'X2_R_B')
-            self.U_Y2_A = sql.get_value(self.connection, 'hv_rack_values', 'Y2_R_A')
-            self.U_Y2_B = sql.get_value(self.connection, 'hv_rack_values', 'Y2_R_B')
+            #Read Deflector variable values from server
+            self.U_X1_A = self.client.get_float('Deflectors_XY1_XA')[1]
+            self.U_X1_B = self.client.get_float('Deflectors_XY1_XB')[1]
+            self.U_Y1_A = self.client.get_float('Deflectors_XY1_YA')[1]
+            self.U_Y1_B = self.client.get_float('Deflectors_XY1_YB')[1]
+            self.U_X2_A = self.client.get_float('Deflectors_XY2_XA')[1]
+            self.U_X2_B = self.client.get_float('Deflectors_XY2_XB')[1]
+            self.U_Y2_A = self.client.get_float('Deflectors_XY2_YA')[1]
+            self.U_Y2_B = self.client.get_float('Deflectors_XY2_YB')[1]
         
         except:
-            #Read Cathode variable values from sql server
+            #Read Cathode variable values from server
             self.U_cat = 0
             self.I_cat = 0.00
 
-            #Read Anode variable values from sql server
+            #Read Anode variable values from server
             self.U_an = 0
             self.I_an = 0
 
-            #Read Drfit Tube variable values from sql server
+            #Read Drfit Tube variable values from server
             self.t_ion = 3000
             self.t_ext = 3000
-            self.U_0 = 4500
-            self.U_A = 500
-            self.U_B = 500
+            self.U_0 = 0
+            self.U_A = 0
+            self.U_B = 0
 
-            #Read Lens variable values from sql server
+            #Read Lens variable values from server
             self.U_ext = 0
             self.U_EL1 = 0
             self.U_EL2 = 0
 
-            #Read Deflector variable values from sql server
+            #Read Deflector variable values from server
             self.U_X1_A = 0
             self.U_X1_B = 0
             self.U_Y1_A = 0
@@ -288,7 +301,6 @@ class EBIT:
             self.t_ion_set = 3000
             self.t_ext_set = 3000
             self.U_0_set = 4500
-            self.I_dt = 0
             self.U_A_set = 500
             self.U_B1 = 0
             self.U_B2 = 456
@@ -479,18 +491,21 @@ class EBIT:
     def data_updater(self):
         t0 = time.time()
         while True:
-            #Read Cathode variable values from sql server
-            self.U_cat = sql.get_value(self.connection, 'hv_rack_values', 'CATHODE_V_R')
+            #Read Cathode variable values from server
+            self.U_cat = self.client.get_float('Cathode_Voltage_Read')[1]
             self.U_cat_actual.config(text=f'{int(round(self.U_cat,0))} V')
 
-            self.I_cat = sql.get_value(self.connection, 'hv_rack_values', 'CATHODE_I_Emiss')
+            self.I_cat = self.client.get_float('Cathode_Emission')[1]
             self.I_cat_label.config(text=f'{round(self.I_cat,1)} mA')
 
-            #Read Anode variable values from sql server
-            self.U_an = sql.get_value(self.connection, 'hv_rack_values', 'Anode_V_R')
+            self.I_heat = self.client.get_float('Cathode_Heater_Current_Read')[1]
+            self.I_heat_actual.config(text=f'{round(self.I_heat,2)} A')
+
+            #Read Anode variable values from server
+            self.U_an = self.client.get_float('Anode_Voltage_Read')[1]
             self.U_an_actual_label4.config(text = f'{int(round(self.U_an,0))}')
 
-            self.I_an = sql.get_value(self.connection, 'hv_rack_values', 'Anode_I_R')
+            self.I_an = self.client.get_float('Anode_Current')[1]
             self.I_an_label4.config(text=f'{round(self.I_an,0)}')
 
             if len(self.anode_array) > 10:
@@ -499,67 +514,68 @@ class EBIT:
             self.anode_array.append(self.U_an)
             self.time_array.append(time.time()-t0)
 
-            #Read Drfit Tube variable values from sql server
-            self.t_ion = sql.get_value(self.connection, 'hv_rack_values', 'T_ION')
-            self.t_ext = sql.get_value(self.connection, 'hv_rack_values', 'T_EXT')
+            #Read Drfit Tube variable values from server
+            self.t_ion = self.client.get_float('Drift_Tubes_T_Ion')[1]
+            self.t_ext = self.client.get_float('Drift_Tubes_T_Ext')[1]
 
-            self.U_0 = sql.get_value(self.connection, 'hv_rack_values', 'U_0_R')
+            self.U_0 = self.client.get_float('Drift_Tubes_U0_Read')[1]
             self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
 
-            self.U_A = sql.get_value(self.connection, 'hv_rack_values', 'U_A_R')
+            self.U_A = self.client.get_float('Drift_Tubes_UA_Read')[1]
             self.U_A_actual.config(text="-{:.1f} V".format(self.U_A))
 
-            self.U_B = sql.get_value(self.connection, 'hv_rack_values', 'U_B_R')
+            self.U_B = self.client.get_float('Drift_Tubes_UB')[1]
             self.U_B_actual.config(text="-{:.1f} V".format(self.U_B))
 
+            self.I_dt = self.client.get_float('Drift_Tubes_Current')[1]
             self.I_dt_label.config(text=f'{int(round(self.I_dt,0))} μA')
             
 
-            #Read Lens variable values from sql server
-            self.U_ext = sql.get_value(self.connection, 'hv_rack_values', 'EXT_R')
+            #Read Lens variable values from server
+            self.U_ext = self.client.get_float('Extraction_Voltage_Read')[1]
             if self.U_ext > 0:
                 self.U_ext_actual.config(text=f'-{int(round(self.U_ext,0))} V')
             elif self.U_ext == 0:
                 self.U_ext_actual.config(text=f'{int(round(self.U_ext,0))} V')
 
-            self.U_EL1 = sql.get_value(self.connection, 'hv_rack_values', 'EL1_R')
+            self.U_EL1 = self.client.get_float('Lens_1_Voltage_Read')[1]
             if self.U_EL1_q == False:
                 self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
             elif self.U_EL1_q == True:
                 self.U_EL1_actual.config(text=f'-{int(round(self.U_EL1,0))} V')
 
-            self.U_EL2 = sql.get_value(self.connection, 'hv_rack_values', 'EL2_R')
+            self.U_EL2 = self.client.get_float('Lens_2_Voltage_Read')[1]
             if self.U_EL2_q == False:
                 self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
             elif self.U_EL2_q == True:
                 self.U_EL2_actual.config(text=f'-{int(round(self.U_EL2,0))} V')
 
-            #Read Deflector variable values from sql server
-            self.U_X1_A = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_A')
+            #Read Deflector variable values from server
+            self.U_X1_A = self.client.get_float('Deflectors_XY1_XA')[1]
             self.U_X1_A_actual.config(text=f'{round(float(self.U_X1_A),1)} V')
-            self.U_X1_B = sql.get_value(self.connection, 'hv_rack_values', 'X1_R_B')
+            self.U_X1_B = self.client.get_float('Deflectors_XY1_XB')[1]
             self.U_X1_B_actual.config(text=f'{round(float(self.U_X1_B),1)} V')
 
-            self.U_Y1_A = sql.get_value(self.connection, 'hv_rack_values', 'Y1_R_A')
+            self.U_Y1_A = self.client.get_float('Deflectors_XY1_YA')[1]
             self.U_Y1_A_actual.config(text=f'{round(float(self.U_Y1_A),1)} V')
-            self.U_Y1_B = sql.get_value(self.connection, 'hv_rack_values', 'Y1_R_B')
+            self.U_Y1_B = self.client.get_float('Deflectors_XY1_YB')[1]
             self.U_Y1_B_actual.config(text=f'{round(float(self.U_Y1_B),1)} V')
 
-            self.U_X2_A = sql.get_value(self.connection, 'hv_rack_values', 'X2_R_A')
+            self.U_X2_A = self.client.get_float('Deflectors_XY2_XA')[1]
             self.U_X2_A_actual.config(text=f'{round(float(self.U_X2_A),1)} V')
-            self.U_X2_B = sql.get_value(self.connection, 'hv_rack_values', 'X2_R_B')
+            self.U_X2_B = self.client.get_float('Deflectors_XY2_XB')[1]
             self.U_X2_B_actual.config(text=f'{round(float(self.U_X2_B),1)} V')
 
-            self.U_Y2_A = sql.get_value(self.connection, 'hv_rack_values', 'Y2_R_A')
+            self.U_Y2_A = self.client.get_float('Deflectors_XY2_YA')[1]
             self.U_Y2_A_actual.config(text=f'{round(float(self.U_Y2_A),1)} V')
-            self.U_Y2_B = sql.get_value(self.connection, 'hv_rack_values', 'Y2_R_B')
+            self.U_Y2_B = self.client.get_float('Deflectors_XY2_YB')[1]
             self.U_Y2_B_actual.config(text=f'{round(float(self.U_Y2_B),1)} V')
 
 
 
-            #Write Cathode variable values to sql server
+            #Write Cathode variable values to server
             if self.U_cat != self.U_cat_set and self.U_cat_set >= 0:
-                sql.send_value(self.connection, 'hv_rack_values', 'CATHODE_V_W', self.U_cat_set)
+                self.client.set_float('Cathode_Voltage_Set', self.U_cat_set)
             elif self.U_cat_set < 0:
                 self.U_cat_set = self.U_cat
                 helpMessage ='Please enter a positive value'
@@ -576,22 +592,22 @@ class EBIT:
                 self.I_heat = 0
                 self.I_heat_actual.config(text=f'{int(round(self.I_heat,0))}')
 
-            #Write Anode variable values to sql server
+            #Write Anode variable values to server
             if self.U_an != self.U_an_set:
-                sql.send_value(self.connection, 'hv_rack_values', 'Anode_V_W', self.U_an_set)
+                self.client.set_float('Anode_Voltage_Set', self.U_an_set)
 
-            #Write Drift Tube variable values to sql server
+            #Write Drift Tube variable values to server
             if self.t_ion != self.t_ion_set:
-                sql.send_value(self.connection, 'hv_rack_values', 'T_ION', self.t_ion_set)
+                self.client.set_float('Drift_Tubes_T_Ion', self.t_ion_set)
             if self.t_ext != self.t_ext_set:
-                sql.send_value(self.connection, 'hv_rack_values', 'T_EXT', self.t_ext_set)
+                self.client.set_float('Drift_Tubes_T_Ext', self.t_ext_set)
             if self.U_0 != self.U_0_set:
-                sql.send_value(self.connection, 'hv_rack_values', 'U_0_W', self.U_0_set)
+                self.client.set_float('Drift_Tubes_U0_Set', self.U_0_set)
             if self.U_A != self.U_A_set:
-                sql.send_value(self.connection, 'hv_rack_values', 'U_A_W', self.U_A_set)
+                self.client.set_float('Drift_Tubes_UA_Set', self.U_A_set)
                 
 
-            #Write Lens variable values to sql server
+            #Write Lens variable values to server
             if self.U_ext != self.U_ext_set:
                 if self.U_ext_set < 0:
                     self.U_ext_set = self.U_ext
@@ -601,7 +617,7 @@ class EBIT:
                     messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
                     self.lens.after(5000, messageVar.destroy)
                 else:
-                    sql.send_value(self.connection, 'hv_rack_values', 'EXT_W', self.U_ext_set)
+                    self.client.set_float('Extraction_Voltage_Set', self.U_ext_set)
 
             if self.U_EL1 != self.U_EL1_set:
                 if self.U_EL1_q == False:
@@ -613,7 +629,7 @@ class EBIT:
                         messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
                         self.lens.after(5000, messageVar.destroy)
                     else:
-                        sql.send_value(self.connection, 'hv_rack_values', 'EL1_W', self.U_EL1_set)
+                        self.client.set_float('Lens_1_Voltage_Set', self.U_EL1_set)
 
                 elif self.U_EL1_q == True:
                     if self.U_EL1_set > 0:
@@ -624,7 +640,7 @@ class EBIT:
                         messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
                         self.lens.after(5000, messageVar.destroy)
                     else:
-                        sql.send_value(self.connection, 'hv_rack_values', 'EL1_W', -self.U_EL1_set)
+                        self.client.set_float('Lens_1_Voltage_Set', -self.U_EL1_set)
 
             
             if self.U_EL2 != self.U_EL2_set:
@@ -637,7 +653,7 @@ class EBIT:
                         messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
                         self.lens.after(5000, messageVar.destroy)
                     else:
-                        sql.send_value(self.connection, 'hv_rack_values', 'EL2_W', self.U_EL2_set)
+                        self.client.set_float('Lens_2_Voltage_Set', self.U_EL2_set)
 
                 elif self.U_EL2_q == True:
                     if self.U_EL2_set > 0:
@@ -648,17 +664,17 @@ class EBIT:
                         messageVar.place(relx = 0.5, rely = 0.2, anchor = CENTER)
                         self.lens.after(5000, messageVar.destroy)
                     else:
-                        sql.send_value(self.connection, 'hv_rack_values', 'EL2_W', -self.U_EL2_set)
+                        self.client.set_float('Lens_2_Voltage_Set', -self.U_EL2_set)
 
-            #Write Deflector variable values to sql server
+            #Write Deflector variable values to server
             if self.U_X1_A != self.U_X1_set:
-                sql.send_value(self.connection, 'hv_rack_values', 'X1_W', self.U_X1_set)
+                self.client.set_float('Deflectors_XY1_X_Set', self.U_X1_set)
             if self.U_Y1_A != self.U_Y1_set:
-                sql.send_value(self.connection, 'hv_rack_values', 'Y1_W', self.U_Y1_set)
+                self.client.set_float('Deflectors_XY1_Y_Set', self.U_Y1_set)
             if self.U_X2_A != self.U_X2_set:
-                sql.send_value(self.connection, 'hv_rack_values', 'X2_W', self.U_X2_set)
+                self.client.set_float('Deflectors_XY2_X_Set', self.U_X2_set)
             if self.U_Y2_A != self.U_Y2_set:
-                sql.send_value(self.connection, 'hv_rack_values', 'Y2_W', self.U_Y2_set)
+                self.client.set_float('Deflectors_XY2_Y_Set', self.U_Y2_set)
 
 
 
