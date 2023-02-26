@@ -1,6 +1,6 @@
 #CUEBIT Control Interface
 #Author: Richard Mattish
-#Last Updated: 02/22/2023
+#Last Updated: 02/25/2023
 
 
 #Function:  This program provides a graphical user interface for controlling
@@ -199,11 +199,22 @@ class EBIT:
         self.doors = None
         self.EMO = None
 
-
+        #Power Buttons
+        self.U_cat_power = False
+        self.I_heat_power = False
+        self.anode_power = False
+        self.dt_power = False
+        self.U_ext_power = False
+        self.U_EL1_power = False
+        self.U_EL2_power = False
+        self.U_X1_power = False
+        self.U_Y1_power = False
+        self.U_X2_power = False
+        self.U_Y2_power = False
 
         #Other Buttons
-        self.U_EL1_q = False
-        self.U_EL2_q = False
+        self.U_EL1_q = 1
+        self.U_EL2_q = 1
 
         try:
             #Read Cathode variable values from server
@@ -237,15 +248,6 @@ class EBIT:
             self.U_Y2_A = self.client.get_float('Deflectors_XY2_YA')[1]
             self.U_Y2_B = self.client.get_float('Deflectors_XY2_YB')[1]
 
-            #Power Buttons
-            self.U_cat_power = self.client.get_bool('Cathode_Voltage_Power')[1]
-            self.I_heat_power = self.client.get_bool('Cathode_Heater_Power')[1]
-            self.anode_power = self.client.get_bool('Anode_Power')[1]
-            self.dt_power = self.client.get_bool('Drift_Tubes_Power')[1]
-            self.U_ext_power = self.client.get_bool('Extraction_Voltage_Power')[1]
-            self.U_EL1_power = self.client.get_bool('Lens_1_Voltage_Power')[1]
-            self.U_EL2_power = self.client.get_bool('Lens_2_Voltage_Power')[1]
-        
         except:
             #Read Cathode variable values from server
             self.U_cat = 0
@@ -276,15 +278,6 @@ class EBIT:
             self.U_X2_B = 0
             self.U_Y2_A = 0
             self.U_Y2_B = 0
-
-            #Power Buttons
-            self.U_cat_power = False
-            self.I_heat_power = False
-            self.anode_power = False
-            self.dt_power = False
-            self.U_ext_power = False
-            self.U_EL1_power = False
-            self.U_EL2_power = False
 
         #Currently initializes variables just for testing purposes. Later, we will read in the actual values in the try block above
         if True:
@@ -363,10 +356,10 @@ class EBIT:
     def About(self):
         name = "CUEBIT Control Center"
         version = 'Version: 1.0.0'
-        date = 'Date: 02/24/2022'
+        date = 'Date: 02/25/2023'
         support = 'Support: '
-        url = 'https://github.com/rhmatti/CUEBIT-Spectrum-Analyzer'
-        copyrightMessage ='Copyright © 2022 Richard Mattish All Rights Reserved.'
+        url = 'https://github.com/rhmatti/CUEBIT-Control-Interface'
+        copyrightMessage ='Copyright © 2023 Richard Mattish All Rights Reserved.'
         t = Toplevel(self.root)
         t.wm_title("About")
         t.geometry("400x300")
@@ -386,7 +379,7 @@ class EBIT:
         l3.place(relx = 0.15, rely = 0.35, anchor = W)
         l4 = Label(t, text = support, bg = 'white', font=font_12)
         l4.place(relx = 0.15, rely = 0.45, anchor = W)
-        l5 = Label(t, text = 'https://github.com/rhmatti/\nCUEBIT-Spectrum-Analyzer', bg = 'white', fg = 'blue', font=font_12)
+        l5 = Label(t, text = 'https://github.com/rhmatti/\nCUEBIT-Control-Interface', bg = 'white', fg = 'blue', font=font_12)
         l5.place(relx = 0.31, rely=0.48, anchor = W)
         l5.bind("<Button-1>", lambda e:
         callback(url))
@@ -420,10 +413,8 @@ class EBIT:
         v.config(command=t.yview)
 
     def click_button(self, button, type, variable, text=None):
-        print('Button has been pressed')
-        self.update_button_var(variable, True)
-
         if type == 'power':
+            self.update_button_var(variable, True)
             button.config(bg='#50E24B', command=lambda: self.declick_button(button, type, variable), activebackground='#50E24B')
 
         elif type == 'timer':
@@ -431,21 +422,17 @@ class EBIT:
             self.dt_timer = True
 
         elif type == 'charge':
+            self.update_button_var(variable, -1)
             if text != None:
                 button.config(bg='#50E24B', text='negative', command=lambda: self.declick_button(button, type, variable, text), activebackground='#50E24B')
                 text.config(text = '= -')
             else:
                 button.config(bg='#50E24B', text='negative', command=lambda: self.declick_button(button, type, variable), activebackground='#50E24B')
-            if variable == 'U_EL1_charge':
-                self.U_EL1_set = -self.U_EL1_set
-            elif variable == 'U_EL2_charge':
-                self.U_EL2_set = -self.U_EL2_set
 
 
     def declick_button(self, button, type, variable, text=None):
-        print('Button has been depressed')
-        self.update_button_var(variable, False)
         if type == 'power':
+            self.update_button_var(variable, False)
             button.config(bg='grey90', command=lambda: self.click_button(button, type, variable), activebackground='grey90')
 
         elif type == 'timer':
@@ -453,44 +440,53 @@ class EBIT:
             self.dt_timer = False
 
         elif type == 'charge':
+            self.update_button_var(variable, 1)
             if text != None:
                 button.config(bg='#1AA5F6', text='positive', command=lambda: self.click_button(button, type, variable, text), activebackground='#1AA5F6')
                 text.config(text = '=  ')
             else:
                 button.config(bg='#1AA5F6', text='positive', command=lambda: self.click_button(button, type, variable), activebackground='#1AA5F6')
-            if variable == 'U_EL1_charge':
-                self.U_EL1_set = -self.U_EL1_set
-            elif variable == 'U_EL2_charge':
-                self.U_EL2_set = -self.U_EL2_set
 
     def update_button_var(self, variable, value):
         if variable == 'U_cat':
-            self.U_cat_power = value
-            print(self.U_cat_power)
+            self.client.set_bool('Cathode_Voltage_Power', value)
+            print('Cathode voltage power button pressed')
         elif variable == 'I_heat':
-            self.I_heat_power = value
-            print(self.I_heat_power)
+            self.client.set_bool('Cathode_Heater_Power', value)
+            print('Cathode heater power button pressed')
         elif variable == 'dt_power':
-            self.dt_power = value
-            print(self.dt_power)
+            self.client.set_bool('Drift_Tubes_Power', value)
+            print('Drift tubes power button pressed')
         elif variable == 'anode_power':
-            self.anode_power = value
-            print(self.anode_power)
+            self.client.set_bool('Anode_Voltage_Power', value)
+            print('Anode power button pressed')
         elif variable == 'U_ext':
-            self.U_ext_power = value
-            print(self.U_ext_power)
+            self.client.set_bool('Extraction_Voltage_Power', value)
+            print('Extraction voltage power button pressed')
         elif variable == 'U_EL1':
-            self.U_EL1_power = value
-            print(self.U_EL1_power)
+            self.client.set_bool('Lens_1_Voltage_Power', value)
+            print('Lens 1 voltage power button pressed')
         elif variable == 'U_EL1_charge':
-            self.U_EL1_q = value
-            print(self.U_EL1_q)
+            self.client.set_int('Lens_1_Polarity', value)
+            print('Lens 1 polarity button pressed')
         elif variable == 'U_EL2_charge':
-            self.U_EL2_q = value
-            print(self.U_EL2_q)
+            self.client.set_int('Lens_2_Polarity', value)
+            print('Lens 2 polarity button pressed')
         elif variable == 'U_EL2':
-            self.U_EL2_power = value
-            print(self.U_EL2_power)
+            self.client.set_bool('Lens_2_Voltage_Power', value)
+            print('Lens 2 voltage power button pressed')
+        elif variable == 'U_X1':
+            self.client.set_bool('Deflectors_XY1_X_Power', value)
+            print('Deflector X1 voltage power button pressed')
+        elif variable == 'U_Y1':
+            self.client.set_bool('Deflectors_XY1_Y_Power', value)
+            print('Deflector Y1 voltage power button pressed')
+        elif variable == 'U_X2':
+            self.client.set_bool('Deflectors_XY2_X_Power', value)
+            print('Deflector X2 voltage power button pressed')
+        elif variable == 'U_Y2':
+            self.client.set_bool('Deflectors_XY2_Y_Power', value)
+            print('Deflector Y2 voltage power button pressed')
 
     def animate(self, i):
         self.anode_ax.clear()
@@ -500,20 +496,48 @@ class EBIT:
         #self.anode_ax.set_ylabel('Potential (V)')
         self.anode_ax.set_ylim(0,12000)
 
+
+    #This function runs is run in a separate thread and runs continuously
+    #It reads values of all PLC variables and updates them in the display
     def data_reader(self):
         t0 = time.time()
         while True:
             #Read Cathode variable values from server
+            U_cat_power = self.client.get_bool('Cathode_Voltage_Power')[1]
+            if self.U_cat_power != U_cat_power:
+                self.U_cat_power = U_cat_power
+                if self.U_cat_power:
+                    self.U_cat_button.config(bg='#50E24B', command=lambda: self.declick_button(self.U_cat_button, 'power', 'U_cat'), activebackground='#50E24B')
+                else:
+                    self.U_cat_button.config(bg='grey90', command=lambda: self.click_button(self.U_cat_button, 'power', 'U_cat'), activebackground='grey90')
+                
             self.U_cat = self.client.get_float('Cathode_Voltage_Read')[1]
             self.U_cat_actual.config(text=f'{int(round(self.U_cat,0))} V')
 
+            I_heat_power = self.client.get_bool('Cathode_Heater_Power')[1]
+            if self.I_heat_power != I_heat_power:
+                self.I_heat_power = I_heat_power
+                if self.I_heat_power:
+                    self.I_heat_button.config(bg='#50E24B', command=lambda: self.declick_button(self.I_heat_button, 'power', 'I_heat'), activebackground='#50E24B')
+                else:
+                    self.I_heat_button.config(bg='grey90', command=lambda: self.click_button(self.I_heat_button, 'power', 'I_heat'), activebackground='grey90')
+                
             self.I_cat = self.client.get_float('Cathode_Emission')[1]
             self.I_cat_label.config(text=f'{round(self.I_cat,1)} mA')
 
             self.I_heat = self.client.get_float('Cathode_Heater_Current_Read')[1]
             self.I_heat_actual.config(text=f'{round(self.I_heat,2)} A')
 
+
             #Read Anode variable values from server
+            anode_power = self.client.get_bool('Anode_Voltage_Power')[1]
+            if self.anode_power != anode_power:
+                self.anode_power = anode_power
+                if self.anode_power:
+                    self.anode_button.config(bg='#50E24B', command=lambda: self.declick_button(self.anode_button, 'power', 'anode_power'), activebackground='#50E24B')
+                else:
+                    self.anode_button.config(bg='grey90', command=lambda: self.click_button(self.anode_button, 'power', 'anode_power'), activebackground='grey90')
+                
             self.U_an = self.client.get_float('Anode_Voltage_Read')[1]
             self.U_an_actual_label4.config(text = f'{int(round(self.U_an,0))}')
 
@@ -526,7 +550,16 @@ class EBIT:
             self.anode_array.append(self.U_an)
             self.time_array.append(time.time()-t0)
 
+
             #Read Drfit Tube variable values from server
+            dt_power = self.client.get_bool('Drift_Tubes_Power')[1]
+            if self.dt_power != dt_power:
+                self.dt_power = dt_power
+                if self.dt_power:
+                    self.dt_button.config(bg='#50E24B', command=lambda: self.declick_button(self.dt_button, 'power', 'dt_power'), activebackground='#50E24B')
+                else:
+                    self.dt_button.config(bg='grey90', command=lambda: self.click_button(self.dt_button, 'power', 'dt_power'), activebackground='grey90')
+                
             self.t_ion = self.client.get_float('Drift_Tubes_T_Ion')[1]
             self.t_ext = self.client.get_float('Drift_Tubes_T_Ext')[1]
 
@@ -544,39 +577,106 @@ class EBIT:
             
 
             #Read Lens variable values from server
+            U_ext_power = self.client.get_bool('Extraction_Voltage_Power')[1]
+            if self.U_ext_power != U_ext_power:
+                self.U_ext_power = U_ext_power
+                if self.U_ext_power:
+                    self.U_ext_button.config(bg='#50E24B', command=lambda: self.declick_button(self.U_ext_button, 'power', 'U_ext'), activebackground='#50E24B')
+                else:
+                    self.U_ext_button.config(bg='grey90', command=lambda: self.click_button(self.U_ext_button, 'power', 'U_ext'), activebackground='grey90')
+                
             self.U_ext = self.client.get_float('Extraction_Voltage_Read')[1]
             if self.U_ext > 0:
                 self.U_ext_actual.config(text=f'-{int(round(self.U_ext,0))} V')
             elif self.U_ext == 0:
                 self.U_ext_actual.config(text=f'{int(round(self.U_ext,0))} V')
 
-            self.U_EL1 = self.client.get_float('Lens_1_Voltage_Read')[1]
-            if self.U_EL1_q == False:
-                self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
-            elif self.U_EL1_q == True:
-                self.U_EL1_actual.config(text=f'-{int(round(self.U_EL1,0))} V')
+            U_EL1_power = self.client.get_bool('Lens_1_Voltage_Power')[1]
+            if self.U_EL1_power != U_EL1_power:
+                self.U_EL1_power = U_EL1_power
+                if self.U_EL1_power:
+                    self.U_EL1_button.config(bg='#50E24B', command=lambda: self.declick_button(self.U_EL1_button, 'power', 'U_EL1'), activebackground='#50E24B')
+                else:
+                    self.U_EL1_button.config(bg='grey90', command=lambda: self.click_button(self.U_EL1_button, 'power', 'U_EL1'), activebackground='grey90')
+            
+            U_EL1_q = self.client.get_int('Lens_1_Polarity')[1]
+            if self.U_EL1_q != U_EL1_q:
+                self.U_EL1_q = U_EL1_q
+                if self.U_EL1_q == -1:
+                    self.U_EL1_charge.config(bg='#50E24B', command=lambda: self.declick_button(self.U_EL1_charge, 'charge', 'U_EL1_charge', self.U_EL1_label3), activebackground='#50E24B')
+                else:
+                    self.U_EL1_charge.config(bg='#1AA5F6', command=lambda: self.click_button(self.U_EL1_charge, 'charge', 'U_EL1_charge', self.U_EL1_label3), activebackground='#1AA5F6')
 
+            self.U_EL1 = self.client.get_float('Lens_1_Voltage_Read')[1]
+            self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+
+            U_EL2_power = self.client.get_bool('Lens_2_Voltage_Power')[1]
+            if self.U_EL2_power != U_EL2_power:
+                self.U_EL2_power = U_EL2_power
+                if self.U_EL2_power:
+                    self.U_EL2_button.config(bg='#50E24B', command=lambda: self.declick_button(self.U_EL2_button, 'power', 'U_EL2'), activebackground='#50E24B')
+                else:
+                    self.U_EL2_button.config(bg='grey90', command=lambda: self.click_button(self.U_EL2_button, 'power', 'U_EL2'), activebackground='grey90')
+
+            U_EL2_q = self.client.get_int('Lens_2_Polarity')[1]
+            if self.U_EL2_q != U_EL2_q:
+                self.U_EL2_q = U_EL2_q
+                if self.U_EL2_q == -1:
+                    self.U_EL2_charge.config(bg='#50E24B', command=lambda: self.declick_button(self.U_EL2_charge, 'charge', 'U_EL2_charge', self.U_EL2_label3), activebackground='#50E24B')
+                else:
+                    self.U_EL2_charge.config(bg='#1AA5F6', command=lambda: self.click_button(self.U_EL2_charge, 'charge', 'U_EL2_charge', self.U_EL2_label3), activebackground='#1AA5F6')
+            
             self.U_EL2 = self.client.get_float('Lens_2_Voltage_Read')[1]
-            if self.U_EL2_q == False:
-                self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
-            elif self.U_EL2_q == True:
-                self.U_EL2_actual.config(text=f'-{int(round(self.U_EL2,0))} V')
+            self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
+
 
             #Read Deflector variable values from server
+            U_X1_power = self.client.get_bool('Deflectors_XY1_X_Power')[1]
+            if self.U_X1_power != U_X1_power:
+                self.U_X1_power = U_X1_power
+                if self.U_X1_power:
+                    self.U_X1_button.config(bg='#50E24B', command=lambda: self.declick_button(self.U_X1_button, 'power', 'U_X1'), activebackground='#50E24B')
+                else:
+                    self.U_X1_button.config(bg='grey90', command=lambda: self.click_button(self.U_X1_button, 'power', 'U_X1'), activebackground='grey90')
+
             self.U_X1_A = self.client.get_float('Deflectors_XY1_XA')[1]
             self.U_X1_A_actual.config(text=f'{round(float(self.U_X1_A),1)} V')
             self.U_X1_B = self.client.get_float('Deflectors_XY1_XB')[1]
             self.U_X1_B_actual.config(text=f'{round(float(self.U_X1_B),1)} V')
+
+            U_Y1_power = self.client.get_bool('Deflectors_XY1_Y_Power')[1]
+            if self.U_Y1_power != U_Y1_power:
+                self.U_Y1_power = U_Y1_power
+                if self.U_Y1_power:
+                    self.U_Y1_button.config(bg='#50E24B', command=lambda: self.declick_button(self.U_Y1_button, 'power', 'U_Y1'), activebackground='#50E24B')
+                else:
+                    self.U_Y1_button.config(bg='grey90', command=lambda: self.click_button(self.U_Y1_button, 'power', 'U_Y1'), activebackground='grey90')
 
             self.U_Y1_A = self.client.get_float('Deflectors_XY1_YA')[1]
             self.U_Y1_A_actual.config(text=f'{round(float(self.U_Y1_A),1)} V')
             self.U_Y1_B = self.client.get_float('Deflectors_XY1_YB')[1]
             self.U_Y1_B_actual.config(text=f'{round(float(self.U_Y1_B),1)} V')
 
+            U_X2_power = self.client.get_bool('Deflectors_XY2_X_Power')[1]
+            if self.U_X2_power != U_X2_power:
+                self.U_X2_power = U_X2_power
+                if self.U_X2_power:
+                    self.U_X2_button.config(bg='#50E24B', command=lambda: self.declick_button(self.U_X2_button, 'power', 'U_X2'), activebackground='#50E24B')
+                else:
+                    self.U_X2_button.config(bg='grey90', command=lambda: self.click_button(self.U_X2_button, 'power', 'U_X2'), activebackground='grey90')
+
             self.U_X2_A = self.client.get_float('Deflectors_XY2_XA')[1]
             self.U_X2_A_actual.config(text=f'{round(float(self.U_X2_A),1)} V')
             self.U_X2_B = self.client.get_float('Deflectors_XY2_XB')[1]
             self.U_X2_B_actual.config(text=f'{round(float(self.U_X2_B),1)} V')
+
+            U_Y2_power = self.client.get_bool('Deflectors_XY2_Y_Power')[1]
+            if self.U_Y2_power != U_Y2_power:
+                self.U_Y2_power = U_Y2_power
+                if self.U_Y2_power:
+                    self.U_Y2_button.config(bg='#50E24B', command=lambda: self.declick_button(self.U_Y2_button, 'power', 'U_Y2'), activebackground='#50E24B')
+                else:
+                    self.U_Y2_button.config(bg='grey90', command=lambda: self.click_button(self.U_Y2_button, 'power', 'U_Y2'), activebackground='grey90')
 
             self.U_Y2_A = self.client.get_float('Deflectors_XY2_YA')[1]
             self.U_Y2_A_actual.config(text=f'{round(float(self.U_Y2_A),1)} V')
@@ -639,8 +739,8 @@ class EBIT:
         self.I_heat_entry.insert(0, "{:.2f}".format(self.I_heat_set))
         
         if self.I_heat_set >= 0 and self.I_heat_set <=10:
-            self.I_heat_actual.config(text="{:.2f}".format(self.I_heat) + ' A')
-            print('cathode current set')
+            self.client.set_float('Cathode_Heater_Current_Set', self.I_heat_set)
+            print('cathode heater current set')
         elif self.I_heat_set < 0:
             self.I_heat_set = self.I_heat
             helpMessage ='Please enter a positive value'
@@ -1158,7 +1258,7 @@ class EBIT:
         U_EL1_label4 = Label(self.lens, text='V', font=font_14, bg = 'grey90', fg = 'black')
         U_EL1_label4.place(relx=0.69, rely=0.6, anchor=CENTER)
 
-        self.U_EL1_actual = Label(self.lens, text=f'{round(self.U_EL1,0)} V', font=font_14, bg='grey90', fg='black')
+        self.U_EL1_actual = Label(self.lens, text=f'{round(self.U_EL1_q*self.U_EL1,0)} V', font=font_14, bg='grey90', fg='black')
         self.U_EL1_actual.place(relx=0.98, rely=0.6, anchor=E)
 
 

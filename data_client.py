@@ -299,6 +299,10 @@ class BaseDataClient:
     def get_float(self, key, default=0):
         time, var = self.get_var(key, default)
         return time, float(var)
+    
+    def get_int(self, key, default=0):
+        time, var = self.get_var(key, default)
+        return time, int(var)
 
     def get_var(self, key, default=0):
         resp = self.get_value(key)
