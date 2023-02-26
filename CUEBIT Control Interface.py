@@ -608,7 +608,7 @@ class EBIT:
                     self.U_EL1_charge.config(bg='#1AA5F6', command=lambda: self.click_button(self.U_EL1_charge, 'charge', 'U_EL1_charge', self.U_EL1_label3), activebackground='#1AA5F6')
 
             self.U_EL1 = self.client.get_float('Lens_1_Voltage_Read')[1]
-            self.U_EL1_actual.config(text=f'{int(round(self.U_EL1,0))} V')
+            self.U_EL1_actual.config(text=f'{int(round(self.U_EL1_q*self.U_EL1,0))} V')
 
             U_EL2_power = self.client.get_bool('Lens_2_Voltage_Power')[1]
             if self.U_EL2_power != U_EL2_power:
@@ -627,7 +627,7 @@ class EBIT:
                     self.U_EL2_charge.config(bg='#1AA5F6', command=lambda: self.click_button(self.U_EL2_charge, 'charge', 'U_EL2_charge', self.U_EL2_label3), activebackground='#1AA5F6')
             
             self.U_EL2 = self.client.get_float('Lens_2_Voltage_Read')[1]
-            self.U_EL2_actual.config(text=f'{int(round(self.U_EL2,0))} V')
+            self.U_EL2_actual.config(text=f'{int(round(self.U_EL2_q*self.U_EL2,0))} V')
 
 
             #Read Deflector variable values from server
