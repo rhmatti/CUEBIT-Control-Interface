@@ -1125,7 +1125,7 @@ class EBIT:
 
         self.U_0_entry = Entry(self.dt, font=font_14, justify=RIGHT)
         self.U_0_entry.place(relx=0.24, rely=0.45, anchor=W, width=70)
-        self.U_0_entry.insert(0,str(self.U_0))
+        self.U_0_entry.insert(0,int(round(self.U_0,0)))
         self.U_0_entry.bind("<Return>", lambda eff: self.update_U_0())
 
 
