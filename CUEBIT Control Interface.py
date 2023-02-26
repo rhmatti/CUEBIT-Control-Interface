@@ -220,6 +220,7 @@ class EBIT:
             #Read Cathode variable values from server
             self.U_cat = self.client.get_float('Cathode_Voltage_Read')[1]
             self.I_cat = self.client.get_float('Cathode_Emission')[1]
+            self.I_heat = self.client.get_float('Cathode_Heater_Current_Read')[1]
 
             #Read Anode variable values from server
             self.U_an = self.client.get_float('Anode_Voltage_Read')[1]
@@ -294,7 +295,6 @@ class EBIT:
             self.anode_array = []
 
             #Cathode Variables
-            self.I_heat = 0
             self.I_heat_set = 0
             self.U_filament = 0.00
             self.U_cat_set = 0
@@ -512,7 +512,7 @@ class EBIT:
                     self.U_cat_button.config(bg='grey90', command=lambda: self.click_button(self.U_cat_button, 'power', 'U_cat'), activebackground='grey90')
                 
             self.U_cat = self.client.get_float('Cathode_Voltage_Read')[1]
-            self.U_cat_actual.config(text=f'{int(round(self.U_cat,0))} V')
+            self.U_cat_actual.config(text=f'{int(round(-1*self.U_cat,0))} V')
 
             I_heat_power = self.client.get_bool('Cathode_Heater_Power')[1]
             if self.I_heat_power != I_heat_power:
@@ -953,7 +953,7 @@ class EBIT:
         U_cat_label3.place(relx=0.29, rely=0.42, anchor=E)
 
         self.U_cat_entry = Entry(self.cathode, font=font_14, justify=RIGHT)
-        self.U_cat_entry.insert(0,str(self.U_cat))
+        self.U_cat_entry.insert(0,int(round(self.U_cat,0)))
         self.U_cat_entry.place(relx=0.29, rely=0.42, anchor=W, width=70)
         self.U_cat_entry.bind("<Return>", lambda eff: self.update_U_cat())
 
@@ -979,7 +979,7 @@ class EBIT:
         I_heat_label3.place(relx=0.28, rely=0.87, anchor=E)
 
         self.I_heat_entry = Entry(self.cathode, font=font_14, justify=RIGHT)
-        self.I_heat_entry.insert(0,"{:.2f}".format(self.I_heat))
+        self.I_heat_entry.insert(0, round(self.I_heat,2))
         self.I_heat_entry.place(relx=0.29, rely=0.87, anchor=W, width=70)
         I_heat_label4 = Label(self.cathode, text='A', font=font_14, bg = 'grey90', fg = 'black')
         I_heat_label4.place(relx=0.49, rely=0.87, anchor=CENTER)
@@ -1014,7 +1014,7 @@ class EBIT:
 
         self.U_an_entry = Entry(self.anode, font=font_14, justify=RIGHT)
         self.U_an_entry.place(relx=0.24, rely=0.49, anchor=W, width=70)
-        self.U_an_entry.insert(0,str(self.U_an))
+        self.U_an_entry.insert(0,int(round(self.U_an,0)))
         self.U_an_entry.bind("<Return>", lambda eff: self.update_U_an())
 
         U_an_label4 = Label(self.anode, text='V', font=font_14, bg = 'grey90', fg = 'black')
