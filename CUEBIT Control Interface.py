@@ -35,6 +35,7 @@ import matplotlib.animation as animation
 import numpy as np
 import scipy as sp
 import pandas as pd
+from decimal import Decimal
 
 
 # Set true for if running dummy server.
@@ -122,6 +123,11 @@ class EBIT:
         #Arrays for plots
         self.time_array = []
         self.anode_array = []
+        self.valve_pressure_array = []
+        self.source_pressure_array = []
+
+        #Pressure Variables
+        self.P_source = None
 
         #Cathode Variables
         self.U_cat = None
@@ -217,6 +223,9 @@ class EBIT:
         self.U_EL2_q = 1
 
         try:
+            #Read Pressure values from server
+            self.P_source = self.client.get_float('Pressure_HV_Source')[1]
+
             #Read Cathode variable values from server
             self.U_cat = self.client.get_float('Cathode_Voltage_Read')[1]
             self.I_cat = self.client.get_float('Cathode_Emission')[1]
@@ -248,6 +257,9 @@ class EBIT:
             self.U_X2_B = self.client.get_float('Deflectors_XY2_XB')[1]
             self.U_Y2_A = self.client.get_float('Deflectors_XY2_YA')[1]
             self.U_Y2_B = self.client.get_float('Deflectors_XY2_YB')[1]
+
+            #Read Gas Valve Pressure set value from server
+            self.P_Valve = self.client.get_float('Pressure_Gas_Valve_Set')[1]
 
         except:
             #Read Cathode variable values from server
@@ -496,14 +508,35 @@ class EBIT:
         #self.anode_ax.set_ylabel('Potential (V)')
         self.anode_ax.set_ylim(0,12000)
 
+    def pressure_animate(self, i):
+        self.gas_ax.clear()
+        xdata = self.time_array
+        ydata1 = self.valve_pressure_array
+        ydata2 = self.source_pressure_array
+        #self.gas_ax.plot(xdata,ydata1)
+        self.gas_ax.plot(xdata,ydata2)
 
-    #This function runs is run in a separate thread and runs continuously
+
+
+    #This function is run in a separate thread and runs continuously
     #It reads values of all PLC variables and updates them in the display
     def data_reader(self):
         t0 = time.time()
+        self.read_client = BaseDataClient(ADDR)
+        self.read_client.select()
+        serverValues = {}
         while True:
+            #Returns all server values as a dictionary
+            readValues = self.read_client.get_all()
+            for key in readValues:
+                serverValues[key] = readValues[key]
+
+            #Read Pressure values from server
+            self.P_source = serverValues['Pressure_HV_Source'][1]
+            self.P_source_label4.config(text='%.2E' % Decimal(self.P_source))
+
             #Read Cathode variable values from server
-            U_cat_power = self.client.get_bool('Cathode_Voltage_Power')[1]
+            U_cat_power = serverValues['Cathode_Voltage_Power'][1]
             if self.U_cat_power != U_cat_power:
                 self.U_cat_power = U_cat_power
                 if self.U_cat_power:
@@ -511,10 +544,10 @@ class EBIT:
                 else:
                     self.U_cat_button.config(bg='grey90', command=lambda: self.click_button(self.U_cat_button, 'power', 'U_cat'), activebackground='grey90')
                 
-            self.U_cat = self.client.get_float('Cathode_Voltage_Read')[1]
+            self.U_cat = serverValues['Cathode_Voltage_Read'][1]
             self.U_cat_actual.config(text=f'{int(round(-1*self.U_cat,0))} V')
 
-            I_heat_power = self.client.get_bool('Cathode_Heater_Power')[1]
+            I_heat_power = serverValues['Cathode_Heater_Power'][1]
             if self.I_heat_power != I_heat_power:
                 self.I_heat_power = I_heat_power
                 if self.I_heat_power:
@@ -522,15 +555,15 @@ class EBIT:
                 else:
                     self.I_heat_button.config(bg='grey90', command=lambda: self.click_button(self.I_heat_button, 'power', 'I_heat'), activebackground='grey90')
                 
-            self.I_cat = self.client.get_float('Cathode_Emission')[1]
+            self.I_cat = serverValues['Cathode_Emission'][1]
             self.I_cat_label.config(text=f'{round(self.I_cat,1)} mA')
 
-            self.I_heat = self.client.get_float('Cathode_Heater_Current_Read')[1]
+            self.I_heat = serverValues['Cathode_Heater_Current_Read'][1]
             self.I_heat_actual.config(text=f'{round(self.I_heat,2)} A')
 
 
             #Read Anode variable values from server
-            anode_power = self.client.get_bool('Anode_Voltage_Power')[1]
+            anode_power = serverValues['Anode_Voltage_Power'][1]
             if self.anode_power != anode_power:
                 self.anode_power = anode_power
                 if self.anode_power:
@@ -538,21 +571,23 @@ class EBIT:
                 else:
                     self.anode_button.config(bg='grey90', command=lambda: self.click_button(self.anode_button, 'power', 'anode_power'), activebackground='grey90')
                 
-            self.U_an = self.client.get_float('Anode_Voltage_Read')[1]
+            self.U_an = serverValues['Anode_Voltage_Read'][1]
             self.U_an_actual_label4.config(text = f'{int(round(self.U_an,0))}')
 
-            self.I_an = self.client.get_float('Anode_Current')[1]
+            self.I_an = serverValues['Anode_Current'][1]
             self.I_an_label4.config(text=f'{round(self.I_an,0)}')
 
             if len(self.anode_array) > 10:
                 self.anode_array.pop(0)
                 self.time_array.pop(0)
+                self.source_pressure_array.pop(0)
             self.anode_array.append(self.U_an)
             self.time_array.append(time.time()-t0)
+            self.source_pressure_array.append(self.P_source)
 
 
             #Read Drfit Tube variable values from server
-            dt_power = self.client.get_bool('Drift_Tubes_Power')[1]
+            dt_power = serverValues['Drift_Tubes_Power'][1]
             if self.dt_power != dt_power:
                 self.dt_power = dt_power
                 if self.dt_power:
@@ -560,24 +595,24 @@ class EBIT:
                 else:
                     self.dt_button.config(bg='grey90', command=lambda: self.click_button(self.dt_button, 'power', 'dt_power'), activebackground='grey90')
                 
-            self.t_ion = self.client.get_float('Drift_Tubes_T_Ion')[1]
-            self.t_ext = self.client.get_float('Drift_Tubes_T_Ext')[1]
+            self.t_ion = serverValues['Drift_Tubes_T_Ion'][1]
+            self.t_ext = serverValues['Drift_Tubes_T_Ext'][1]
 
-            self.U_0 = self.client.get_float('Drift_Tubes_U0_Read')[1]
+            self.U_0 = serverValues['Drift_Tubes_U0_Read'][1]
             self.U_0_actual.config(text=f'{int(round(self.U_0,0))} V')
 
-            self.U_A = self.client.get_float('Drift_Tubes_UA_Read')[1]
+            self.U_A = serverValues['Drift_Tubes_UA_Read'][1]
             self.U_A_actual.config(text="-{:.1f} V".format(self.U_A))
 
-            self.U_B = self.client.get_float('Drift_Tubes_UB')[1]
+            self.U_B = serverValues['Drift_Tubes_UB'][1]
             self.U_B_actual.config(text="-{:.1f} V".format(self.U_B))
 
-            self.I_dt = self.client.get_float('Drift_Tubes_Current')[1]
+            self.I_dt = serverValues['Drift_Tubes_Current'][1]
             self.I_dt_label.config(text=f'{int(round(self.I_dt,0))} μA')
             
 
             #Read Lens variable values from server
-            U_ext_power = self.client.get_bool('Extraction_Voltage_Power')[1]
+            U_ext_power = serverValues['Extraction_Voltage_Power'][1]
             if self.U_ext_power != U_ext_power:
                 self.U_ext_power = U_ext_power
                 if self.U_ext_power:
@@ -585,13 +620,13 @@ class EBIT:
                 else:
                     self.U_ext_button.config(bg='grey90', command=lambda: self.click_button(self.U_ext_button, 'power', 'U_ext'), activebackground='grey90')
                 
-            self.U_ext = self.client.get_float('Extraction_Voltage_Read')[1]
+            self.U_ext = serverValues['Extraction_Voltage_Read'][1]
             if self.U_ext > 0:
                 self.U_ext_actual.config(text=f'-{int(round(self.U_ext,0))} V')
             elif self.U_ext == 0:
                 self.U_ext_actual.config(text=f'{int(round(self.U_ext,0))} V')
 
-            U_EL1_power = self.client.get_bool('Lens_1_Voltage_Power')[1]
+            U_EL1_power = serverValues['Lens_1_Voltage_Power'][1]
             if self.U_EL1_power != U_EL1_power:
                 self.U_EL1_power = U_EL1_power
                 if self.U_EL1_power:
@@ -599,7 +634,7 @@ class EBIT:
                 else:
                     self.U_EL1_button.config(bg='grey90', command=lambda: self.click_button(self.U_EL1_button, 'power', 'U_EL1'), activebackground='grey90')
             
-            U_EL1_q = self.client.get_int('Lens_1_Polarity')[1]
+            U_EL1_q = serverValues['Lens_1_Polarity'][1]
             if self.U_EL1_q != U_EL1_q:
                 self.U_EL1_q = U_EL1_q
                 if self.U_EL1_q == -1:
@@ -607,10 +642,10 @@ class EBIT:
                 else:
                     self.U_EL1_charge.config(bg='#1AA5F6', command=lambda: self.click_button(self.U_EL1_charge, 'charge', 'U_EL1_charge', self.U_EL1_label3), activebackground='#1AA5F6')
 
-            self.U_EL1 = self.client.get_float('Lens_1_Voltage_Read')[1]
+            self.U_EL1 = serverValues['Lens_1_Voltage_Read'][1]
             self.U_EL1_actual.config(text=f'{int(round(self.U_EL1_q*self.U_EL1,0))} V')
 
-            U_EL2_power = self.client.get_bool('Lens_2_Voltage_Power')[1]
+            U_EL2_power = serverValues['Lens_2_Voltage_Power'][1]
             if self.U_EL2_power != U_EL2_power:
                 self.U_EL2_power = U_EL2_power
                 if self.U_EL2_power:
@@ -618,7 +653,7 @@ class EBIT:
                 else:
                     self.U_EL2_button.config(bg='grey90', command=lambda: self.click_button(self.U_EL2_button, 'power', 'U_EL2'), activebackground='grey90')
 
-            U_EL2_q = self.client.get_int('Lens_2_Polarity')[1]
+            U_EL2_q = serverValues['Lens_2_Polarity'][1]
             if self.U_EL2_q != U_EL2_q:
                 self.U_EL2_q = U_EL2_q
                 if self.U_EL2_q == -1:
@@ -626,12 +661,12 @@ class EBIT:
                 else:
                     self.U_EL2_charge.config(bg='#1AA5F6', command=lambda: self.click_button(self.U_EL2_charge, 'charge', 'U_EL2_charge', self.U_EL2_label3), activebackground='#1AA5F6')
             
-            self.U_EL2 = self.client.get_float('Lens_2_Voltage_Read')[1]
+            self.U_EL2 = serverValues['Lens_2_Voltage_Read'][1]
             self.U_EL2_actual.config(text=f'{int(round(self.U_EL2_q*self.U_EL2,0))} V')
 
 
             #Read Deflector variable values from server
-            U_X1_power = self.client.get_bool('Deflectors_XY1_X_Power')[1]
+            U_X1_power = serverValues['Deflectors_XY1_X_Power'][1]
             if self.U_X1_power != U_X1_power:
                 self.U_X1_power = U_X1_power
                 if self.U_X1_power:
@@ -639,12 +674,12 @@ class EBIT:
                 else:
                     self.U_X1_button.config(bg='grey90', command=lambda: self.click_button(self.U_X1_button, 'power', 'U_X1'), activebackground='grey90')
 
-            self.U_X1_A = self.client.get_float('Deflectors_XY1_XA')[1]
+            self.U_X1_A = serverValues['Deflectors_XY1_XA'][1]
             self.U_X1_A_actual.config(text=f'{round(float(self.U_X1_A),1)} V')
-            self.U_X1_B = self.client.get_float('Deflectors_XY1_XB')[1]
+            self.U_X1_B = serverValues['Deflectors_XY1_XB'][1]
             self.U_X1_B_actual.config(text=f'{round(float(self.U_X1_B),1)} V')
 
-            U_Y1_power = self.client.get_bool('Deflectors_XY1_Y_Power')[1]
+            U_Y1_power = serverValues['Deflectors_XY1_Y_Power'][1]
             if self.U_Y1_power != U_Y1_power:
                 self.U_Y1_power = U_Y1_power
                 if self.U_Y1_power:
@@ -652,12 +687,12 @@ class EBIT:
                 else:
                     self.U_Y1_button.config(bg='grey90', command=lambda: self.click_button(self.U_Y1_button, 'power', 'U_Y1'), activebackground='grey90')
 
-            self.U_Y1_A = self.client.get_float('Deflectors_XY1_YA')[1]
+            self.U_Y1_A = serverValues['Deflectors_XY1_YA'][1]
             self.U_Y1_A_actual.config(text=f'{round(float(self.U_Y1_A),1)} V')
-            self.U_Y1_B = self.client.get_float('Deflectors_XY1_YB')[1]
+            self.U_Y1_B = serverValues['Deflectors_XY1_YB'][1]
             self.U_Y1_B_actual.config(text=f'{round(float(self.U_Y1_B),1)} V')
 
-            U_X2_power = self.client.get_bool('Deflectors_XY2_X_Power')[1]
+            U_X2_power = serverValues['Deflectors_XY2_X_Power'][1]
             if self.U_X2_power != U_X2_power:
                 self.U_X2_power = U_X2_power
                 if self.U_X2_power:
@@ -665,12 +700,12 @@ class EBIT:
                 else:
                     self.U_X2_button.config(bg='grey90', command=lambda: self.click_button(self.U_X2_button, 'power', 'U_X2'), activebackground='grey90')
 
-            self.U_X2_A = self.client.get_float('Deflectors_XY2_XA')[1]
+            self.U_X2_A = serverValues['Deflectors_XY2_XA'][1]
             self.U_X2_A_actual.config(text=f'{round(float(self.U_X2_A),1)} V')
-            self.U_X2_B = self.client.get_float('Deflectors_XY2_XB')[1]
+            self.U_X2_B = serverValues['Deflectors_XY2_XB'][1]
             self.U_X2_B_actual.config(text=f'{round(float(self.U_X2_B),1)} V')
 
-            U_Y2_power = self.client.get_bool('Deflectors_XY2_Y_Power')[1]
+            U_Y2_power = serverValues['Deflectors_XY2_Y_Power'][1]
             if self.U_Y2_power != U_Y2_power:
                 self.U_Y2_power = U_Y2_power
                 if self.U_Y2_power:
@@ -678,10 +713,11 @@ class EBIT:
                 else:
                     self.U_Y2_button.config(bg='grey90', command=lambda: self.click_button(self.U_Y2_button, 'power', 'U_Y2'), activebackground='grey90')
 
-            self.U_Y2_A = self.client.get_float('Deflectors_XY2_YA')[1]
+            self.U_Y2_A = serverValues['Deflectors_XY2_YA'][1]
             self.U_Y2_A_actual.config(text=f'{round(float(self.U_Y2_A),1)} V')
-            self.U_Y2_B = self.client.get_float('Deflectors_XY2_YB')[1]
+            self.U_Y2_B = serverValues['Deflectors_XY2_YB'][1]
             self.U_Y2_B_actual.config(text=f'{round(float(self.U_Y2_B),1)} V')
+
 
             time.sleep(0.1)
     
@@ -888,6 +924,12 @@ class EBIT:
             self.client.set_float('Deflectors_XY2_Y_Set', self.U_Y2_set)
             print('Y2 deflector potential set')
 
+    def update_P_Valve(self):
+        self.P_Valve = float(self.P_valve_entry.get())
+        self.P_valve_entry.delete(0, END)
+        self.P_valve_entry.insert(0,'%.2E' % Decimal(self.P_Valve))
+        self.client.set_float('Pressure_Gas_Valve_Set', self.P_Valve)
+
 
     
     #Creates the Different Menus in the Main Window
@@ -916,11 +958,11 @@ class EBIT:
         style.configure('TFrame', background='#96CAF2')
         #style.configure('TFrame', background='#F5974F')
         self.tabControl = ttk.Notebook(self.root)
-        self.service_tab = ttk.Frame(self.tabControl)
+        self.operation_tab = ttk.Frame(self.tabControl)
         self.source_tab = ttk.Frame(self.tabControl)
         self.slit_tab = ttk.Frame(self.tabControl)
 
-        self.tabControl.add(self.service_tab, text='Service')
+        self.tabControl.add(self.operation_tab, text='Operation')
         self.tabControl.add(self.source_tab, text='Source')
         self.tabControl.add(self.slit_tab, text='Slit')
         self.tabControl.pack(expand=1, fill='both')
@@ -929,7 +971,7 @@ class EBIT:
 
     #Creates the Cathode Controls in a frame that is placed at the coordinates (x, y)
     def cathode_controls(self, x, y):    
-        self.cathode = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
+        self.cathode = Frame(self.operation_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.cathode.place(relx = x, rely = y, anchor = CENTER)
  
         #Canvas for creating divider line between potential and current controls
@@ -994,7 +1036,7 @@ class EBIT:
         
     #Creates the Anode Controls in a frame that is placed at the coordinates (x, y)
     def anode_controls(self, x, y):
-        self.anode = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
+        self.anode = Frame(self.operation_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.anode.place(relx = x, rely = y, anchor = CENTER)
 
         anodeLabel = Label(self.anode, text = 'Anode', font = font_18, bg = 'grey90', fg = 'black')
@@ -1065,7 +1107,7 @@ class EBIT:
 
     #Creates the Drift Tube Controls in a frame that is placed at the coordinates (x, y)
     def drift_tube_controls(self, x, y):
-        self.dt = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
+        self.dt = Frame(self.operation_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.dt.place(relx = x, rely = y, anchor = CENTER)
 
         dtLabel = Label(self.dt, text = 'Drift Tubes', font = font_18, bg = 'grey90', fg = 'black')
@@ -1205,7 +1247,7 @@ class EBIT:
 
     #Creates the Lens Controls in a frame that is placed at the coordinates (x,y)
     def lens_controls(self, x, y):
-        self.lens = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
+        self.lens = Frame(self.operation_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.lens.place(relx = x, rely = y, anchor = CENTER)
 
         lensLabel = Label(self.lens, text = 'Lens', font = font_18, bg = 'grey90', fg = 'black')
@@ -1288,9 +1330,9 @@ class EBIT:
         self.U_EL2_actual = Label(self.lens, text=f'{round(self.U_EL2,0)} V', font=font_14, bg='grey90', fg='black')
         self.U_EL2_actual.place(relx=0.98, rely=0.85, anchor=E)
 
-
+    #Creates the Deflector Controls in a frame that is placed at the coordinates (x,y)
     def deflector_controls(self, x, y):
-        self.deflector = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
+        self.deflector = Frame(self.operation_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.deflector.place(relx = x, rely = y, anchor = CENTER)
 
         deflectorLabel = Label(self.deflector, text = 'Deflectors', font = font_18, bg = 'grey90', fg = 'black')
@@ -1409,13 +1451,57 @@ class EBIT:
         self.U_Y2_B_actual = Label(self.deflector, text=f'{round(float(self.U_Y2_B),1)} V', font=font_14, bg='grey90', fg='black')
         self.U_Y2_B_actual.place(relx=0.98, rely=0.9, anchor=E)
 
+    #Creates the Gas Valve Controls in a frame that is placed at the coordinates (x,y)
     def gas_valve(self, x, y):
-        self.gas = Frame(self.service_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
+        self.gas = Frame(self.operation_tab, width = 400, height = 200, background = 'grey90', highlightbackground = 'black', highlightcolor = 'black', highlightthickness = 1)
         self.gas.place(relx = x, rely = y, anchor = CENTER)
 
         gasLabel = Label(self.gas, text = 'Gas Valve', font = font_18, bg = 'grey90', fg = 'black')
         gasLabel.place(relx=0.3, rely=0.1, anchor = CENTER)
+
+        P_valve_label1 = Label(self.gas, text='P', font=font_14, bg = 'grey90', fg = 'black')
+        P_valve_label1.place(relx=0.09, rely=0.49, anchor=CENTER)
+        #Creates subscript "valve" because Tkinter is stupid and doesn't support rich text in Labels
+        P_valve_label2 = Label(self.gas, text='valve', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=4)
+        P_valve_label2.place(relx=0.11, rely=0.52, anchor=W)
+
+        P_valve_label3 = Label(self.gas, text='= ', font=font_14, bg = 'grey90', fg = 'black')
+        P_valve_label3.place(relx=0.24, rely=0.49, anchor=E)
         
+        self.P_valve_entry = Entry(self.gas, font=font_14, justify=RIGHT)
+        self.P_valve_entry.place(relx=0.24, rely=0.49, anchor=W, width=90)
+        self.P_valve_entry.insert(0,'%.2E' % Decimal(self.P_Valve))
+        self.P_valve_entry.bind("<Return>", lambda eff: self.update_P_Valve())
+
+        P_valve_label4 = Label(self.gas, text='mbar', font=font_14, bg = 'grey90', fg = 'black')
+        P_valve_label4.place(relx=0.53, rely=0.49, anchor=CENTER)
+
+        P_source_label1 = Label(self.gas, text='P', font=font_14, bg = 'grey90', fg = 'black')
+        P_source_label1.place(relx=0.07, rely=0.67, anchor=CENTER)
+        #Creates subscript "valve" because Tkinter is stupid and doesn't support rich text in Labels
+        P_source_label2 = Label(self.gas, text='source', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=5)
+        P_source_label2.place(relx=0.09, rely=0.7, anchor=W)
+
+        P_source_label3 = Label(self.gas, text='= ', font=font_14, bg = 'grey90', fg = 'black')
+        P_source_label3.place(relx=0.24, rely=0.67, anchor=E)
+
+        self.P_source_label4 = Label(self.gas, text='%.2E' % Decimal(self.P_source), font=font_14, bg='grey90', fg='black')
+        self.P_source_label4.place(relx=0.47, rely=0.67, anchor=E)
+
+        P_source_label5 = Label(self.gas, text='mbar', font=font_14, bg = 'grey90', fg = 'black')
+        P_source_label5.place(relx=0.53, rely=0.67, anchor=CENTER)
+
+
+        self.gas_fig = Figure(figsize=(2,1.9))
+        self.gas_ax = self.gas_fig.add_subplot(111)
+        pressurePlot = FigureCanvasTkAgg(self.gas_fig, self.gas)
+        pressurePlot.get_tk_widget().place(relx=0.99, rely=0.98, anchor=SE)
+        self.gas_fig.patch.set_facecolor("#E5E5E5")
+        self.gas_ax.axes.set_facecolor(color='#E5E5E5')
+        self.gas_ax.axes.xaxis.set_visible(False)
+        #self.gas_ax.set_ylim(0,10000)
+        self.gas_fig.tight_layout()
+        self.gas_ani = animation.FuncAnimation(self.gas_fig, self.pressure_animate, interval = 500)
 
     def makeGui(self, root=None):
         if root == None:
