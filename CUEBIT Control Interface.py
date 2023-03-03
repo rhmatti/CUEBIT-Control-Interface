@@ -515,6 +515,7 @@ class EBIT:
         ydata2 = self.source_pressure_array
         #self.gas_ax.plot(xdata,ydata1)
         self.gas_ax.plot(xdata,ydata2)
+        self.gas_ax.axhline(y=self.P_Valve, color='red')
 
 
 
@@ -525,11 +526,22 @@ class EBIT:
         self.read_client = BaseDataClient(ADDR)
         self.read_client.select()
         serverValues = {}
-        while True:
+        
+        #This queries the server for all values 20 times to populate all variables
+        #(sometimes the server doesn't send a value in the packet, causing an error if it hasn't been previously read)
+        i = 0
+        while i < 20:
             #Returns all server values as a dictionary
             readValues = self.read_client.get_all()
             for key in readValues:
                 serverValues[key] = readValues[key]
+            i = i + 1
+
+        while True:
+            #Returns all server values as a dictionary
+            readValues = self.read_client.get_all()
+            for key in readValues:
+                serverValues[key] = readValues[key]            
 
             #Read Pressure values from server
             self.P_source = serverValues['Pressure_HV_Source'][1]
@@ -577,7 +589,7 @@ class EBIT:
             self.I_an = serverValues['Anode_Current'][1]
             self.I_an_label4.config(text=f'{round(self.I_an,0)}')
 
-            if len(self.anode_array) > 10:
+            if len(self.anode_array) > 30:
                 self.anode_array.pop(0)
                 self.time_array.pop(0)
                 self.source_pressure_array.pop(0)
@@ -929,6 +941,7 @@ class EBIT:
         self.P_valve_entry.delete(0, END)
         self.P_valve_entry.insert(0,'%.2E' % Decimal(self.P_Valve))
         self.client.set_float('Pressure_Gas_Valve_Set', self.P_Valve)
+        print('Gas valve pressure set')
 
 
     
@@ -1460,39 +1473,39 @@ class EBIT:
         gasLabel.place(relx=0.3, rely=0.1, anchor = CENTER)
 
         P_valve_label1 = Label(self.gas, text='P', font=font_14, bg = 'grey90', fg = 'black')
-        P_valve_label1.place(relx=0.09, rely=0.49, anchor=CENTER)
+        P_valve_label1.place(relx=0.05, rely=0.49, anchor=CENTER)
         #Creates subscript "valve" because Tkinter is stupid and doesn't support rich text in Labels
         P_valve_label2 = Label(self.gas, text='valve', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=4)
-        P_valve_label2.place(relx=0.11, rely=0.52, anchor=W)
+        P_valve_label2.place(relx=0.07, rely=0.52, anchor=W)
 
         P_valve_label3 = Label(self.gas, text='= ', font=font_14, bg = 'grey90', fg = 'black')
-        P_valve_label3.place(relx=0.24, rely=0.49, anchor=E)
+        P_valve_label3.place(relx=0.2, rely=0.49, anchor=E)
         
         self.P_valve_entry = Entry(self.gas, font=font_14, justify=RIGHT)
-        self.P_valve_entry.place(relx=0.24, rely=0.49, anchor=W, width=90)
+        self.P_valve_entry.place(relx=0.2, rely=0.49, anchor=W, width=90)
         self.P_valve_entry.insert(0,'%.2E' % Decimal(self.P_Valve))
         self.P_valve_entry.bind("<Return>", lambda eff: self.update_P_Valve())
 
         P_valve_label4 = Label(self.gas, text='mbar', font=font_14, bg = 'grey90', fg = 'black')
-        P_valve_label4.place(relx=0.53, rely=0.49, anchor=CENTER)
+        P_valve_label4.place(relx=0.49, rely=0.49, anchor=CENTER)
 
         P_source_label1 = Label(self.gas, text='P', font=font_14, bg = 'grey90', fg = 'black')
-        P_source_label1.place(relx=0.07, rely=0.67, anchor=CENTER)
+        P_source_label1.place(relx=0.03, rely=0.67, anchor=CENTER)
         #Creates subscript "valve" because Tkinter is stupid and doesn't support rich text in Labels
         P_source_label2 = Label(self.gas, text='source', font=('Helvetica', 8), bg = 'grey90', fg = 'black', width=5)
-        P_source_label2.place(relx=0.09, rely=0.7, anchor=W)
+        P_source_label2.place(relx=0.05, rely=0.7, anchor=W)
 
         P_source_label3 = Label(self.gas, text='= ', font=font_14, bg = 'grey90', fg = 'black')
-        P_source_label3.place(relx=0.24, rely=0.67, anchor=E)
+        P_source_label3.place(relx=0.2, rely=0.67, anchor=E)
 
         self.P_source_label4 = Label(self.gas, text='%.2E' % Decimal(self.P_source), font=font_14, bg='grey90', fg='black')
-        self.P_source_label4.place(relx=0.47, rely=0.67, anchor=E)
+        self.P_source_label4.place(relx=0.43, rely=0.67, anchor=E)
 
         P_source_label5 = Label(self.gas, text='mbar', font=font_14, bg = 'grey90', fg = 'black')
-        P_source_label5.place(relx=0.53, rely=0.67, anchor=CENTER)
+        P_source_label5.place(relx=0.49, rely=0.67, anchor=CENTER)
 
 
-        self.gas_fig = Figure(figsize=(2,1.9))
+        self.gas_fig = Figure(figsize=(1.7,1.9))
         self.gas_ax = self.gas_fig.add_subplot(111)
         pressurePlot = FigureCanvasTkAgg(self.gas_fig, self.gas)
         pressurePlot.get_tk_widget().place(relx=0.99, rely=0.98, anchor=SE)
